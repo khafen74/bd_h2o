@@ -27,10 +27,10 @@ int main(int argc, char *argv[])
     GDALAllRegister();
     OGRRegisterAll();
 
-    const char *shpIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
-    const char *shpOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
-    const char *demIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
-    const char *depOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth.tif";
+    const char *shpIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/01_shpIn";
+    const char *shpOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/03_shpOut";
+    const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+    const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
 
     GDALDataset *pDem = (GDALDataset*) GDALOpen(demIn, GA_ReadOnly);
     int rows = pDem->GetRasterYSize();
@@ -157,7 +157,7 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
     pInDs = pDriverShp->CreateDataSource(inputFeaturePath, NULL);
     pOutDs = pDriverShp->CreateDataSource(outputFeaturePath, NULL);
 
-    pDamsIn = pInDs->GetLayerByName("Dams_BRAT_join4_UTM12N");
+    pDamsIn = pInDs->GetLayerByName("Dams_BRAT_join5_UTM12N");
     pBratIn = pInDs->GetLayerByName("BRAT_TempleFk_WS");
 
     pDamsOut = pOutDs->CreateLayer("ModeledDamPoints", pBratIn->GetSpatialRef(), wkbPoint, NULL);
@@ -182,7 +182,7 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
     pDamsOut->CreateField(&field);
     qDebug()<<"done";
 
-    double x, y, az, value;
+    double x, y, az, value, sampleDist, slope;
     double damHeight = 1.0;
     OGRFeature *pDamFeatureOld, *pDamFeatureNew, *pBratFeature;
     OGRGeometry *pGeom;
@@ -197,7 +197,8 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
     for (int i=0; i<nDams; i++)
     {
         pDamFeatureOld = pDamsIn->GetFeature(i);
-        nBratFID = pDamFeatureOld->GetFieldAsInteger("JOIN_FID");
+        nBratFID = pDamFeatureOld->GetFieldAsInteger("ID");
+        qDebug()<<nBratFID;
         pBratFeature = pBratIn->GetFeature(nBratFID);
         pDamFeatureOld = pDamsIn->GetFeature(i);
 
@@ -211,16 +212,18 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
 
         x = pDamOld->getX(), y = pDamOld->getY();
 
-        value = sampleRasterAlongLine_LowVal(demPath, pDamOld->getX(), pDamOld->getY(), az, 30.0, x, y);
+        slope = pBratFeature->GetFieldAsDouble("iGeo_Slope");
+        sampleDist = damHeight/slope;
+        value = sampleRasterAlongLine_LowVal(demPath, pDamOld->getX(), pDamOld->getY(), az, sampleDist, x, y);
         //qDebug()<<"setting fields";
         pDamNew.setX(x);
         pDamNew.setY(y);
         //qDebug()<<"xy set";
         pDamFeatureNew->SetField("g_elev", value);
         pDamFeatureNew->SetField("d_elev", value+damHeight);
-        pDamFeatureNew->SetField("slope", pBratFeature->GetFieldAsDouble("iGeo_Slope"));
+        pDamFeatureNew->SetField("slope", slope);
         //qDebug()<<"elevs set";
-        value = sampleRasterAlongLine_LowVal(demPath, pLineString->getX(0), pLineString->getY(0), az, 30.0, x, y);
+        value = sampleRasterAlongLine_LowVal(demPath, pLineString->getX(0), pLineString->getY(0), az, sampleDist, x, y);
         //qDebug()<<"endpoint found";
         pDamFeatureNew->SetField("endx", x);
         pDamFeatureNew->SetField("endy", y);
@@ -340,7 +343,7 @@ int createSearchPolygons(const char *outputFeaturePath)
         pPolyFeature->SetField("d_elev", pDamFeature->GetFieldAsDouble("d_elev"));
         azimuthStart = pDamFeature->GetFieldAsDouble("az_us");
         slope = pDamFeature->GetFieldAsDouble("slope");
-        distance = (pDamFeature->GetFieldAsDouble("d_elev")-pDamFeature->GetFieldAsDouble("g_elev"))/slope*2.0;
+        distance = (pDamFeature->GetFieldAsDouble("d_elev")-pDamFeature->GetFieldAsDouble("g_elev"))/slope;
         qDebug()<<pDamFeature->GetFieldAsDouble("slope")<<distance;
         damPoint = (OGRPoint*) pDamFeature->GetGeometryRef();
 
