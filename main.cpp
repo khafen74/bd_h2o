@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+#include <QtCore>
 #include <QDebug>
 #include "gdal.h"
 #include "gdal_priv.h"
@@ -13,41 +14,84 @@ double addDegrees(double base, double addValue);
 double angleBetweenLines(double x1, double y1, double x2, double y2, double x3, double y3);
 double calcAzimuth(double startX, double startY, double endX, double endY);
 int calcCoords(double startX, double startY, double azimuth, double distance, double &newX, double &newY);
+int cleanup(const char *cleanDir);
+int cleanInundationRaster(const char *rasterPath);
 int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeatureType, const char *outputFeaturePath = 0);
+int createInundationRaster(const char *rasterPath, int rows, int cols, double transform[]);
 int createRasterFromPoint(const char *rasterPath, const char *pointPath, int rows, int cols, double transform[]);
 int createSearchPolygons(const char *outputFeaturePath);
+double getDamHeight();
 int getRasterCol(double transform[6], double xCoord);
 int getRasterRow(double transform[6], double yCoord);
 double getRasterValueAtPoint(const char *rasterPath, double xCoord, double yCoord);
-int pointsInPolygon(const char *pointsPath, const char *polygonPath);
+double getWetArea(const char *rasterPath);
+int pointsInPolygon(const char *pointsPath, const char *polygonPath, const char *pointLayerName);
 double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
+int summarizeInundationRaster(const char *rasterPath, const char *outputCsv, int nValues, QVector<int> &thresholds, QVector<double> &areas);
+int updateInundationRaster(const char *updatePath, const char *inputPath);
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+    QDateTime startTime = QDateTime::currentDateTime();
+
     GDALAllRegister();
     OGRRegisterAll();
 
-    const char *shpIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
-    const char *shpOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
-    const char *demIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
-    const char *depOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
+    const char *shpIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/01_shpIn";
+    const char *shpOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/03_shpOut";
+    //const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
+    const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+    //const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
+    const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
+    //const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
+    const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
+    //const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
+    const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
+    //const char *pointLayerName = "dempoints_1m_clip";
+    const char *pointLayerName = "dempoints_10m_clip";
 
     GDALDataset *pDem = (GDALDataset*) GDALOpen(demIn, GA_ReadOnly);
     int rows = pDem->GetRasterYSize();
     int cols = pDem->GetRasterXSize();
     double transform[6];
+    QVector<int> qvWetThresh;
+    QVector<double> qvWetArea;
     pDem->GetGeoTransform(transform);
     GDALClose(pDem);
 
-    //qDebug()<<angleBetweenLines(0.75,1,1,0.75,0,0);
-    pointsInPolygon(shpIn, shpOut);
-    //createDamPoints(demIn, shpIn, 1, shpOut);
-    //createSearchPolygons(shpOut);
-    //createRasterFromPoint(depOut, shpOut, rows, cols, transform);
+    cleanup(shpOut);
+    createInundationRaster(freqOut, rows, cols, transform);
+    int nIterations = 1;
+    double areaMean, areaSum = 0.0;
 
-    qDebug()<<"done";
+    for (int i=0; i<nIterations; i++)
+    {
+        createDamPoints(demIn, shpIn, 1, shpOut);
+        createSearchPolygons(shpOut);
+        pointsInPolygon(shpIn, shpOut, pointLayerName);
+        createRasterFromPoint(depOut, shpOut, rows, cols, transform);
+        updateInundationRaster(freqOut, depOut);
+        areaSum += getWetArea(depOut);
+        cleanup(shpOut);
+        qDebug()<<"Finished"<<i+1<<" of "<<nIterations;
+    }
+
+    areaMean = areaSum/(nIterations*1.0);
+    qDebug()<<"mean area"<<areaMean;
+    cleanInundationRaster(freqOut);
+    summarizeInundationRaster(freqOut, csv, nIterations, qvWetThresh, qvWetArea);
+
+//    cleanup(shpOut);
+//    createDamPoints(demIn, shpIn, 1, shpOut);
+//    createSearchPolygons(shpOut);
+//    pointsInPolygon(shpIn, shpOut, pointLayerName);
+//    createRasterFromPoint(depOut, shpOut, rows, cols, transform);
+
+    QDateTime endTime = QDateTime::currentDateTime();
+
+    qDebug()<<"done"<<startTime.secsTo(endTime)<<startTime.secsTo(endTime)/60.0;
 
     return a.exec();
 }
@@ -76,24 +120,43 @@ double angleBetweenLines(double x1, double y1, double x2, double y2, double x3, 
 {
     double dx1, dy1, dx2, dy2, d, l2, m1, m2, angle;
 
-    dx1 = x3-x1;
-    dy1 = y3-y1;
-    dx2 = x3-x2;
-    dy2 = y3-y2;
+//    dx1 = x3-x1;
+//    dy1 = y3-y1;
+//    dx2 = x3-x2;
+//    dy2 = y3-y2;
 
-    m1 = dy1/dx1;
-    m2 = dy2/dx2;
+//    m1 = dy1/dx1;
+//    m2 = dy2/dx2;
+
+    angle = atan2(y1-y3, x1-x3) - atan2(y2-y3, x2-x3);
+
     //qDebug()<<"slopes"<<m1<<m2;
 
     //qDebug()<<"result"<<(fabs((m1-m2)/(1+m1*m2)));
-    angle = tan(fabs((m1-m2)/(1+m1*m2)));
-    if ((angle*180/PI) > 180.0)
+    //angle = tan(fabs((m1-m2)/(1+m1*m2)));
+    //angle *= (180.0/PI);
+    while (angle < -PI)
     {
-        qDebug()<<"error angle too big"<<angle*180/PI;
+        angle += 2*PI;
     }
+    while (angle > PI)
+    {
+        angle -= 2*PI;
+    }
+//    if ((angle) > 180.0)
+//    {
+//        //qDebug()<<"error angle too big"<<angle*180/PI;
+//        angle -= 180.0;
+//    }
+//    if ((angle) < 0.0)
+//    {
+//        //qDebug()<<"error angle too small"<<angle*180/PI;
+//        angle += 180.0;
+//    }
     //qDebug()<<"angle rad "<<angle<<" angle deg "<< angle * 180.0/PI;
+    //angle *= (180*PI);
 
-    return angle * 180.0/PI;
+    return angle;
 }
 
 double calcAzimuth(double startX, double startY, double endX, double endY)
@@ -167,6 +230,54 @@ int calcCoords(double startX, double startY, double azimuth, double distance, do
     return 0;
 }
 
+int cleanup(const char *cleanDir)
+{
+    QString path = QString::fromUtf8(cleanDir);
+    QDir dir(path);
+    dir.setNameFilters(QStringList() << "*.*");
+
+    foreach (QString dirFile, dir.entryList())
+    {
+        dir.remove(dirFile);
+    }
+
+    return 0;
+}
+
+int cleanInundationRaster(const char *rasterPath)
+{
+    GDALDataset *pRaster;
+    pRaster = (GDALDataset*) GDALOpen(rasterPath, GA_Update);
+
+    int nCols = pRaster->GetRasterXSize();
+    int nRows = pRaster->GetRasterYSize();
+
+    float *rasVal = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    for (int i=0; i<nRows; i++)
+    {
+        pRaster->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, rasVal, nCols, 1, GDT_Float32, 0, 0);
+
+        for (int j=0; j<nCols; j++)
+        {
+            if (rasVal[j] <= 0.0)
+            {
+                rasVal[j] = -9999;
+            }
+        }
+
+        pRaster->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, rasVal, nCols, 1, GDT_Float32, 0, 0);
+    }
+
+    pRaster->GetRasterBand(1)->SetNoDataValue(-9999);
+
+    CPLFree(rasVal);
+
+    GDALClose(pRaster);
+
+    return 0;
+}
+
 int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeatureType, const char *outputFeaturePath)
 {
     //GDALDataset *pDem;
@@ -175,12 +286,10 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
 
     GDALDriver *pDriverTiff;
     pDriverTiff = GetGDALDriverManager()->GetDriverByName("GTiff");
-    qDebug()<<"gdal driver created";
 
     OGRSFDriver *pDriverShp;
     OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
     pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
-    qDebug()<<"ogr driver created";
 
     pInDs = pDriverShp->CreateDataSource(inputFeaturePath, NULL);
     pOutDs = pDriverShp->CreateDataSource(outputFeaturePath, NULL);
@@ -189,7 +298,6 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
     pBratIn = pInDs->GetLayerByName("BRAT_TempleFk_WS");
 
     pDamsOut = pOutDs->CreateLayer("ModeledDamPoints", pBratIn->GetSpatialRef(), wkbPoint, NULL);
-    qDebug()<<"creating fields";
 
     OGRFieldDefn field("endx", OFTReal);
     pDamsOut->CreateField(&field);
@@ -208,10 +316,9 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
     field.SetName("slope");
     field.SetType(OFTReal);
     pDamsOut->CreateField(&field);
-    qDebug()<<"done";
 
     double x, y, az, value, sampleDist, slope;
-    double damHeight = 1.0;
+    double damHeight;
     OGRFeature *pDamFeatureOld, *pDamFeatureNew, *pBratFeature;
     OGRGeometry *pGeom;
     OGRPoint *pDamOld, pDamNew;
@@ -220,13 +327,20 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
     int nDams, nBratFID;
     nDams = pDamsIn->GetFeatureCount();
     pDamFeatureNew = OGRFeature::CreateFeature(pDamsOut->GetLayerDefn());
-    qDebug()<<"starting loop";
 
     for (int i=0; i<nDams; i++)
     {
+        damHeight = getDamHeight();
+        if (damHeight < 0.3 || damHeight > 2.5)
+        {
+            qDebug()<<"Dam Height Error: "<<damHeight;
+        }
+        else
+        {
+            //qDebug()<<damHeight;
+        }
         pDamFeatureOld = pDamsIn->GetFeature(i);
         nBratFID = pDamFeatureOld->GetFieldAsInteger("ID");
-        qDebug()<<nBratFID;
         pBratFeature = pBratIn->GetFeature(nBratFID);
         pDamFeatureOld = pDamsIn->GetFeature(i);
 
@@ -260,8 +374,6 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
         //qDebug()<<"azimuth added";
         pDamFeatureNew->SetGeometry(&pDamNew);
         pDamsOut->CreateFeature(pDamFeatureNew);
-
-        qDebug()<<x<<y<<value<<getRasterValueAtPoint(demPath, pLineString->getX(0), pLineString->getY(0));
     }
     OGRFeature::DestroyFeature(pDamFeatureNew);
     OGRFeature::DestroyFeature(pDamFeatureOld);
@@ -269,6 +381,21 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
 
     OGRDataSource::DestroyDataSource(pInDs);
     OGRDataSource::DestroyDataSource(pOutDs);
+}
+
+int createInundationRaster(const char *rasterPath, int rows, int cols, double transform[])
+{
+    GDALDataset *pRaster;
+    GDALDriver *pDriverTiff = GetGDALDriverManager()->GetDriverByName("GTiff");
+
+    pRaster = pDriverTiff->Create(rasterPath, cols, rows, 1, GDT_Float32, NULL);
+    pRaster->SetGeoTransform(transform);
+    pRaster->GetRasterBand(1)->Fill(0.0);
+    pRaster->GetRasterBand(1)->SetNoDataValue(-9999);
+
+    GDALClose(pRaster);
+
+    return 0;
 }
 
 int createRasterFromPoint(const char *rasterPath, const char *pointPath, int rows, int cols, double transform[6])
@@ -289,9 +416,9 @@ int createRasterFromPoint(const char *rasterPath, const char *pointPath, int row
     OGRLayer *layer = pPoints->GetLayerByName("PondPts");
     int nFeatures = layer->GetFeatureCount();
 
-    QString damElevName = "d_elev";
+    QString damElevName = "dam_elev";
     int nDamEl, nDemEl, row, col;
-    QString demElevName = "GRID_CODE";
+    QString demElevName = "elev";
     QString fieldName;
     double damElev, demElev, watDep;
 
@@ -357,7 +484,6 @@ int createSearchPolygons(const char *outputFeaturePath)
     double xCoords[5], yCoords[5];
     double azimuthCurrent, azimuthStart, distance, slope;
     int nDams = pDamPoints->GetFeatureCount();
-    qDebug()<<nDams;
 
     for (int i=0; i<nDams; i++)
     {
@@ -372,7 +498,6 @@ int createSearchPolygons(const char *outputFeaturePath)
         azimuthStart = pDamFeature->GetFieldAsDouble("az_us");
         slope = pDamFeature->GetFieldAsDouble("slope");
         distance = (pDamFeature->GetFieldAsDouble("d_elev")-pDamFeature->GetFieldAsDouble("g_elev"))/slope;
-        qDebug()<<pDamFeature->GetFieldAsDouble("slope")<<distance;
         damPoint = (OGRPoint*) pDamFeature->GetGeometryRef();
 
         for (int j=0; j<5; j++)
@@ -395,6 +520,17 @@ int createSearchPolygons(const char *outputFeaturePath)
     }
 
     OGRDataSource::DestroyDataSource(pOutDs);
+}
+
+double getDamHeight()
+{
+    int randVal;
+    double returnVal;
+
+    randVal = qrand() % 22 + 3;
+    returnVal = randVal/10.0;
+
+    return returnVal;
 }
 
 int getRasterCol(double transform[6], double xCoord)
@@ -454,82 +590,103 @@ double getRasterValueAtPoint(const char *rasterPath, double xCoord, double yCoor
     return value;
 }
 
-int pointsInPolygon(const char *pointsPath, const char *polygonPath)
+double getWetArea(const char *rasterPath)
 {
-    qDebug()<<"starting points to poly";
+    GDALDataset *pRaster;
+    pRaster = (GDALDataset*) GDALOpen(rasterPath, GA_ReadOnly);
+
+    int nCols = pRaster->GetRasterXSize();
+    int nRows = pRaster->GetRasterYSize();
+    double transform[6];
+    double area;
+    int count = 0;
+    pRaster->GetGeoTransform(transform);
+
+    float *value = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    for (int i=0; i<nRows; i++)
+    {
+        pRaster->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, value, nCols, 1, GDT_Float32, 0, 0);
+
+        for (int j=0; j<nCols; j++)
+        {
+            if (value[j] > 0.0)
+            {
+                count++;
+            }
+        }
+    }
+
+    area = fabs(transform[1]*transform[5]) * (count*1.0);
+
+    CPLFree(value);
+
+    GDALClose(pRaster);
+
+    return area;
+}
+
+int pointsInPolygon(const char *pointsPath, const char *polygonPath, const char *pointLayerName)
+{
     OGRDataSource *pPointDS, *pPolyDS;
     OGRSFDriver *pDriverShp;
     OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
     pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
 
-    //qDebug()<<"loading data";
     pPointDS = pDriverShp->CreateDataSource(pointsPath);
-    //qDebug()<<"points loaded";
     pPolyDS = pDriverShp->CreateDataSource(polygonPath);
-    //qDebug()<<"polys loaded";
-    OGRLayer *pPointsLayer = pPointDS->GetLayerByName("dempoints_10m");
-    //qDebug()<<"dem points loaded"<<pPointsLayer->GetFeatureCount();
+    OGRLayer *pPointsLayer = pPointDS->GetLayerByName(pointLayerName);
     OGRLayer *pPolyLayer = pPolyDS->GetLayerByName("DamSearchPolygons");
-    //qDebug()<<"pond polys loaded";
-    OGRLayer *pDamPointLayer = pPolyDS->CreateLayer("PondPtsTest", pPointsLayer->GetSpatialRef(), wkbPoint, NULL);
-    //qDebug()<<"new points created";
-    OGRFieldDefn field("endx", OFTReal);
+    OGRLayer *pDamPointLayer = pPolyDS->CreateLayer("PondPts", pPointsLayer->GetSpatialRef(), wkbPoint, NULL);
+    OGRFieldDefn field("dam_elev", OFTReal);
+    pDamPointLayer->CreateField(&field);
+    field.SetName("elev");
+    field.SetType(OFTReal);
     pDamPointLayer->CreateField(&field);
 
-    qDebug()<<"starting loop";
     int nPolyCount = pPolyLayer->GetFeatureCount();
-    double angleDeg;
-    qDebug()<<"polygons"<<nPolyCount;
+    double angle;
     for (int i=0; i<nPolyCount; i++)
     {
         OGRFeature *pPolyFeat = pPolyLayer->GetFeature(i);
         OGRPolygon *pPoly = (OGRPolygon*) pPolyFeat->GetGeometryRef();
         OGRLinearRing *pRing = pPoly->getExteriorRing();
-        qDebug()<<pPointsLayer->GetFeatureCount()<<pRing->getNumPoints();
 
         for (int j=0; j<pPointsLayer->GetFeatureCount(); j++)
         {
             OGRFeature *pPointFeat = pPointsLayer->GetFeature(j);
             OGRPoint *pPoint = (OGRPoint*) pPointFeat->GetGeometryRef();
-            angleDeg = 0.0;
-            //qDebug()<<"calcing intersect";
+            angle = 0.0;
+            double px = pPoint->getX();
+            double py = pPoint->getY();
             for (int k=0; k<pRing->getNumPoints()-1; k++)
             {
-                //qDebug()<<pRing->getX(k)<< pRing->getY(k)<< pRing->getX(k+1)<< pRing->getY(k+1)<< pPoint->getX()<< pPoint->getY();
-                angleDeg += angleBetweenLines(pRing->getX(k), pRing->getY(k), pRing->getX(k+1), pRing->getY(k+1), pPoint->getX(), pPoint->getY());
-                //qDebug()<<angleDeg;
-                //qDebug()<<angleDeg;
-
+                angle += angleBetweenLines(pRing->getX(k), pRing->getY(k), pRing->getX(k+1), pRing->getY(k+1), px, py);
             }
-            //qDebug()<<"final angle"<<angleDeg;
-            if (angleDeg < 180)
+            if (angle <PI)
             {
-                //qDebug()<<angleDeg;
+                //point not in polygon
             }
             else
             {
-                qDebug()<<"add point "<<angleDeg;
+                double delev = pPolyFeat->GetFieldAsDouble("d_elev");
+                double elev = pPointFeat->GetFieldAsDouble("GRID_CODE");
                 OGRFeature *newFeature = OGRFeature::CreateFeature(pDamPointLayer->GetLayerDefn());
-                qDebug()<<"feature created";
+                newFeature->SetField("dam_elev", delev);
+                newFeature->SetField("elev", elev);
                 OGRPoint newPoint;
-                qDebug()<<"point created";
                 newPoint.setX(pPoint->getX());
-                qDebug()<<"xset";
                 newPoint.setY(pPoint->getY());
-                qDebug()<<"yset";
                 newFeature->SetGeometry(&newPoint);
-                qDebug()<<"geom set";
-                pDamPointLayer->SetFeature(newFeature);
-                qDebug()<<"feature set";
+                pDamPointLayer->CreateFeature(newFeature);
                 OGRFeature::DestroyFeature(newFeature);
             }
-            //system("pause");
 
             OGRFeature::DestroyFeature(pPointFeat);
         }
 
         OGRFeature::DestroyFeature(pPolyFeat);
-        qDebug()<<"finished feature"<<i;
+        //qDebug()<<"finished feature"<<i;
     }
 
     OGRDataSource::DestroyDataSource(pPointDS);
@@ -540,7 +697,6 @@ int pointsInPolygon(const char *pointsPath, const char *polygonPath)
 
 double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y)
 {
-    //qDebug()<<"sampling";
     double az1, az2, interval;
     double transform[6];
     double newX, newY, rasValue, lowValue;
@@ -587,4 +743,94 @@ double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, doub
     //qDebug()<<"done sampling";
 
     return lowValue;
+}
+
+int summarizeInundationRaster(const char *rasterPath, const char *outputCsv, int nValues, QVector<int> &thresholds, QVector<double> &areas)
+{
+    GDALDataset *pRaster;
+    pRaster = (GDALDataset*) GDALOpen(rasterPath, GA_ReadOnly);
+    double transform[6];
+    pRaster->GetGeoTransform(transform);
+    double cellArea = fabs(transform[1]*transform[5]);
+    double area;
+    int nRows = pRaster->GetRasterYSize();
+    int nCols = pRaster->GetRasterXSize();
+    float *value = (float*) CPLMalloc(sizeof(float)*nCols);
+    QString csvPath = QString::fromUtf8(outputCsv);
+    QFile file(csvPath);
+    if (!file.open(QIODevice::ReadWrite))
+    {
+        qDebug()<<"error opening summary csv";
+        return 1;
+    }
+    QTextStream stream(&file);
+    stream<<"Value,Count,Area\n";
+
+    for (int i=0; i<nValues; i++)
+    {
+        int cellCount = 0;
+
+        for (int j=0; j<nRows; j++)
+        {
+            pRaster->GetRasterBand(1)->RasterIO(GF_Read, 0, j, nCols, 1, value, nCols, 1, GDT_Float32, 0, 0);
+            for (int k=0; k<nCols; k++)
+            {
+                if (value[k] != -9999)
+                {
+                    if (value[k] > (i*1.0))
+                    {
+                        cellCount++;
+                    }
+                }
+            }
+        }
+        area = (cellCount*1.0)*cellArea;
+        stream<<QString::number(i+1)+","+QString::number(cellCount)+","+QString::number(area,'g',10);
+        thresholds.append(i+1);
+        areas.append(area);
+        stream<<endl;
+    }
+
+    file.close();
+    CPLFree(value);
+    GDALClose(pRaster);
+
+    return 0;
+}
+
+int updateInundationRaster(const char *updatePath, const char *inputPath)
+{
+    GDALDataset *pUpdate, *pInput;
+    pUpdate = (GDALDataset*) GDALOpen(updatePath, GA_Update);
+    pInput = (GDALDataset*) GDALOpen(inputPath, GA_ReadOnly);
+
+    int nCols = pUpdate->GetRasterXSize();
+    int nRows = pUpdate->GetRasterYSize();
+
+    float *inputVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *updateVal = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    for (int i=0; i<nRows; i++)
+    {
+        pInput->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, inputVal, nCols, 1, GDT_Float32, 0, 0);
+        pUpdate->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, updateVal, nCols, 1, GDT_Float32, 0, 0);
+
+        for (int j=0; j<nCols; j++)
+        {
+            if (inputVal[j] > 0.0)
+            {
+                updateVal[j] += 1.0;
+            }
+        }
+
+        pUpdate->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, updateVal, nCols, 1, GDT_Float32, 0, 0);
+    }
+
+    CPLFree(inputVal);
+    CPLFree(updateVal);
+
+    GDALClose(pInput);
+    GDALClose(pUpdate);
+
+    return 0;
 }
