@@ -16,16 +16,18 @@ double calcAzimuth(double startX, double startY, double endX, double endY);
 int calcCoords(double startX, double startY, double azimuth, double distance, double &newX, double &newY);
 int cleanup(const char *cleanDir);
 int cleanInundationRaster(const char *rasterPath);
-int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeatureType, const char *outputFeaturePath = 0);
+double createDamPoints(const char *demPath, const char *inputFeaturePath, const char *outputFeaturePath = 0);
 int createInundationRaster(const char *rasterPath, int rows, int cols, double transform[]);
 int createRasterFromPoint(const char *rasterPath, const char *pointPath, int rows, int cols, double transform[]);
 int createSearchPolygons(const char *outputFeaturePath);
 double getDamHeight();
+double getDamHeightLnorm();
 int getRasterCol(double transform[6], double xCoord);
 int getRasterRow(double transform[6], double yCoord);
 double getRasterValueAtPoint(const char *rasterPath, double xCoord, double yCoord);
 double getWetArea(const char *rasterPath);
 int pointsInPolygon(const char *pointsPath, const char *polygonPath, const char *pointLayerName);
+int pointsInPolygon2(const char *pointsPath, const char *polygonPath, const char *pointLayerName);
 double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
 int summarizeInundationRaster(const char *rasterPath, const char *outputCsv, int nValues, QVector<int> &thresholds, QVector<double> &areas);
 int updateInundationRaster(const char *updatePath, const char *inputPath);
@@ -64,18 +66,18 @@ int main(int argc, char *argv[])
     cleanup(shpOut);
     createInundationRaster(freqOut, rows, cols, transform);
     int nIterations = 1;
-    double areaMean, areaSum = 0.0;
+    double areaMean, damHeightSum = 0.0, areaSum = 0.0;
 
     for (int i=0; i<nIterations; i++)
     {
-        createDamPoints(demIn, shpIn, 1, shpOut);
+        damHeightSum += createDamPoints(demIn, shpIn, shpOut);
         createSearchPolygons(shpOut);
         pointsInPolygon(shpIn, shpOut, pointLayerName);
         createRasterFromPoint(depOut, shpOut, rows, cols, transform);
         updateInundationRaster(freqOut, depOut);
         areaSum += getWetArea(depOut);
-        cleanup(shpOut);
-        qDebug()<<"Finished"<<i+1<<" of "<<nIterations;
+        //cleanup(shpOut);
+        qDebug()<<"Finished"<<i+1<<" of "<<nIterations<< ": Mean area = "<<areaSum/(i+1.0)<<" : Mean Dam Height = "<<damHeightSum/(i+1.0);
     }
 
     areaMean = areaSum/(nIterations*1.0);
@@ -118,23 +120,10 @@ double addDegrees(double base, double addValue)
 
 double angleBetweenLines(double x1, double y1, double x2, double y2, double x3, double y3)
 {
-    double dx1, dy1, dx2, dy2, d, l2, m1, m2, angle;
-
-//    dx1 = x3-x1;
-//    dy1 = y3-y1;
-//    dx2 = x3-x2;
-//    dy2 = y3-y2;
-
-//    m1 = dy1/dx1;
-//    m2 = dy2/dx2;
+    double angle;
 
     angle = atan2(y1-y3, x1-x3) - atan2(y2-y3, x2-x3);
 
-    //qDebug()<<"slopes"<<m1<<m2;
-
-    //qDebug()<<"result"<<(fabs((m1-m2)/(1+m1*m2)));
-    //angle = tan(fabs((m1-m2)/(1+m1*m2)));
-    //angle *= (180.0/PI);
     while (angle < -PI)
     {
         angle += 2*PI;
@@ -143,18 +132,6 @@ double angleBetweenLines(double x1, double y1, double x2, double y2, double x3, 
     {
         angle -= 2*PI;
     }
-//    if ((angle) > 180.0)
-//    {
-//        //qDebug()<<"error angle too big"<<angle*180/PI;
-//        angle -= 180.0;
-//    }
-//    if ((angle) < 0.0)
-//    {
-//        //qDebug()<<"error angle too small"<<angle*180/PI;
-//        angle += 180.0;
-//    }
-    //qDebug()<<"angle rad "<<angle<<" angle deg "<< angle * 180.0/PI;
-    //angle *= (180*PI);
 
     return angle;
 }
@@ -278,9 +255,8 @@ int cleanInundationRaster(const char *rasterPath)
     return 0;
 }
 
-int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeatureType, const char *outputFeaturePath)
+double createDamPoints(const char *demPath, const char *inputFeaturePath, const char *outputFeaturePath)
 {
-    //GDALDataset *pDem;
     OGRDataSource *pInDs, *pOutDs;
     OGRLayer *pDamsIn, *pDamsOut, *pBratIn;
 
@@ -325,15 +301,17 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
     OGRLineString *pLineString;
 
     int nDams, nBratFID;
+    double damSum = 0.0;
     nDams = pDamsIn->GetFeatureCount();
     pDamFeatureNew = OGRFeature::CreateFeature(pDamsOut->GetLayerDefn());
 
     for (int i=0; i<nDams; i++)
     {
         damHeight = getDamHeight();
+        damSum += damHeight;
         if (damHeight < 0.3 || damHeight > 2.5)
         {
-            qDebug()<<"Dam Height Error: "<<damHeight;
+            //qDebug()<<"Dam Height Error: "<<damHeight;
         }
         else
         {
@@ -381,6 +359,8 @@ int createDamPoints(const char *demPath, const char *inputFeaturePath, int nFeat
 
     OGRDataSource::DestroyDataSource(pInDs);
     OGRDataSource::DestroyDataSource(pOutDs);
+
+    return damSum/(nDams*1.0);
 }
 
 int createInundationRaster(const char *rasterPath, int rows, int cols, double transform[])
@@ -524,11 +504,21 @@ int createSearchPolygons(const char *outputFeaturePath)
 
 double getDamHeight()
 {
-    int randVal;
+    int randVal, high, low;
     double returnVal;
 
-    randVal = qrand() % 22 + 3;
+    high = 22;
+    low = 3;
+
+    randVal = (qrand() % ((high+1)-low)+low);
     returnVal = randVal/10.0;
+
+    return returnVal;
+}
+
+double getDamHeightLnorm()
+{
+    double returnVal;
 
     return returnVal;
 }
@@ -681,6 +671,67 @@ int pointsInPolygon(const char *pointsPath, const char *polygonPath, const char 
                 pDamPointLayer->CreateFeature(newFeature);
                 OGRFeature::DestroyFeature(newFeature);
             }
+
+            OGRFeature::DestroyFeature(pPointFeat);
+        }
+
+        OGRFeature::DestroyFeature(pPolyFeat);
+        //qDebug()<<"finished feature"<<i;
+    }
+
+    OGRDataSource::DestroyDataSource(pPointDS);
+    OGRDataSource::DestroyDataSource(pPolyDS);
+
+    return 0;
+}
+
+int pointsInPolygon2(const char *pointsPath, const char *polygonPath, const char *pointLayerName)
+{
+    OGRDataSource *pPointDS, *pPolyDS;
+    OGRSFDriver *pDriverShp;
+    OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
+    pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
+
+    pPointDS = pDriverShp->CreateDataSource(pointsPath);
+    pPolyDS = pDriverShp->CreateDataSource(polygonPath);
+    OGRLayer *pPointsLayer = pPointDS->GetLayerByName(pointLayerName);
+    OGRLayer *pPolyLayer = pPolyDS->GetLayerByName("DamSearchPolygons");
+    OGRLayer *pDamPointLayer = pPolyDS->CreateLayer("PondPts", pPointsLayer->GetSpatialRef(), wkbPoint, NULL);
+    OGRFieldDefn field("dam_elev", OFTReal);
+    pDamPointLayer->CreateField(&field);
+    field.SetName("elev");
+    field.SetType(OFTReal);
+    pDamPointLayer->CreateField(&field);
+
+    int nPolyCount = pPolyLayer->GetFeatureCount();
+    double angle;
+    for (int i=0; i<nPolyCount; i++)
+    {
+        OGRFeature *pPolyFeat = pPolyLayer->GetFeature(i);
+        OGRPolygon *pPoly = (OGRPolygon*) pPolyFeat->GetGeometryRef();
+        OGRLinearRing *pRing = pPoly->getExteriorRing();
+        pPointsLayer->SetSpatialFilter(pPoly);
+        qDebug()<<pPointsLayer->GetFeatureCount();
+
+        OGRFeature *pPointFeat;
+
+        pPointsLayer->ResetReading();
+        while ((pPointFeat = pPointsLayer->GetNextFeature()) != NULL)
+        {
+
+            OGRPoint *pPoint = (OGRPoint*) pPointFeat->GetGeometryRef();
+
+            double delev = pPolyFeat->GetFieldAsDouble("d_elev");
+            double elev = pPointFeat->GetFieldAsDouble("GRID_CODE");
+            OGRFeature *newFeature = OGRFeature::CreateFeature(pDamPointLayer->GetLayerDefn());
+            newFeature->SetField("dam_elev", delev);
+            newFeature->SetField("elev", elev);
+            OGRPoint newPoint;
+            newPoint.setX(pPoint->getX());
+            newPoint.setY(pPoint->getY());
+            newFeature->SetGeometry(&newPoint);
+            pDamPointLayer->CreateFeature(newFeature);
+            OGRFeature::DestroyFeature(newFeature);
 
             OGRFeature::DestroyFeature(pPointFeat);
         }
