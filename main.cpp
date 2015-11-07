@@ -6,12 +6,12 @@
 #include "ogrsf_frmts.h"
 #include "ogr_core.h"
 #include "ogr_api.h"
+#include "raster.h"
 
-const double PI = 3.14159265;
 const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
-QVector<double> HEIGHTS;
 
 int run();
+int testRegions();
 int testRandom();
 double addDegrees(double base, double addValue);
 double angleBetweenLines(double x1, double y1, double x2, double y2, double x3, double y3);
@@ -33,6 +33,7 @@ double getRasterValueAtPoint(const char *rasterPath, double xCoord, double yCoor
 double getWetArea(const char *rasterPath);
 int pointsInPolygon2(const char *rasterPath, const char *rasterOut, const char *polygonPath);
 int pointsInPolygon(const char *pointsPath, const char *polygonPath, const char *pointLayerName);
+int regionsToDepth(const char *regRas, const char *depRas, const char *demRas, int nRegions);
 double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
 int summarizeInundationRaster(const char *rasterPath, const char *outputCsv, int nValues, QVector<int> &thresholds, QVector<double> &areas);
 int updateInundationRaster(const char *updatePath, const char *inputPath);
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
     QDateTime startTime = QDateTime::currentDateTime();
 
     run();
+    //testRegions();
     //testRandom();
 
     QDateTime endTime = QDateTime::currentDateTime();
@@ -59,18 +61,34 @@ int run()
     GDALAllRegister();
     OGRRegisterAll();
 
-    const char *shpIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/01_shpIn";
-    const char *shpOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/03_shpOut";
-    const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
-    //const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
-    const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
-    //const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
-    const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
-    //const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
-    const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
-    //const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
-    const char *pointLayerName = "dempoints_1m_clip2";
-    //const char *pointLayerName = "dempoints_10m_clip2";
+//    const char *shpIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
+//    const char *shpOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
+
+    const char *shpIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
+    const char *shpOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
+
+//    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+//    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
+//    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
+//    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
+
+    const char *demIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+    const char *depOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
+    const char *freqOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
+    const char *csv = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
+
+//    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
+//    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
+//    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
+//    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
+
+
+//    const char *binRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/bin.tif";
+//    const char *regRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/reg.tif";
+
+    const char *binRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/bin.tif";
+    const char *regRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/reg.tif";
+
     const char *damLayerName = "Dams_BRAT_join5_UTM12N";
     //const char *damLayerName = "Dams_ESRI";
 
@@ -94,14 +112,35 @@ int run()
         damHeightSum = createDamPoints(demIn, shpIn, shpOut, damLayerName);
         createSearchPolygons(shpOut);
         pointsInPolygon2(demIn, depOut,shpOut);
-        //createRasterFromPoint(depOut, shpOut, rows, cols, transform);
         updateInundationRaster(freqOut, depOut);
         areaSum = getWetArea(depOut);
-        qDebug()<<"Finished"<<i+1<<" of "<<nIterations<< ": Mean area = "<<areaSum<<" : Mean Dam Height = "<<damHeightSum;
+        qDebug()<<"Finished"<<i+1<<" of "<<nIterations<< ": Area = "<<areaSum<<" : Mean Dam Height = "<<damHeightSum;
     }
 
     cleanInundationRaster(freqOut);
     summarizeInundationRaster(freqOut, csv, nIterations, qvWetThresh, qvWetArea);
+
+    Raster raster;
+    raster.greaterThan(freqOut, binRas, 650.0);
+    int regions = raster.regions(binRas, regRas);
+    regionsToDepth(regRas, depOut, demIn, regions);
+
+    return 0;
+}
+
+int testRegions()
+{
+    const char *freqOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
+    const char *binRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin.tif";
+    const char *regRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/reg.tif";
+    const char *demIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+    const char *depOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
+
+    Raster raster;
+    raster.greaterThan(freqOut, binRas, 65.0);
+    int count = raster.regions(binRas, regRas);
+    qDebug()<<"Regions"<<count;
+    regionsToDepth(regRas, depOut, demIn, count);
 
     return 0;
 }
@@ -113,6 +152,7 @@ int testRandom()
         qDebug()<<getDamHeight();
         //qDebug()<<uniformRandom();
     }
+    return 0;
 }
 
 double addDegrees(double base, double addValue)
@@ -325,7 +365,6 @@ double createDamPoints(const char *demPath, const char *inputFeaturePath, const 
     for (int i=0; i<nDams; i++)
     {
         damHeight = getDamHeight();
-        HEIGHTS.append(damHeight);
         damSum += damHeight;
         if (damHeight < 0.3 || damHeight > 2.5)
         {
@@ -819,6 +858,69 @@ int pointsInPolygon2(const char *rasterPath, const char *rasterOut, const char *
     GDALClose(pRasterOut);
 
     return 0;
+}
+
+int regionsToDepth(const char *regRas, const char *depRas, const char *demRas, int nRegions)
+{
+    GDALDataset *pRegionsRaster, *pDepthRaster, *pDem;
+    pRegionsRaster = (GDALDataset*) GDALOpen(regRas, GA_ReadOnly);
+    pDepthRaster = (GDALDataset*) GDALOpen(depRas, GA_Update);
+    pDem = (GDALDataset*) GDALOpen(demRas, GA_ReadOnly);
+    pDepthRaster->GetRasterBand(1)->Fill(-9999);
+    pDepthRaster->GetRasterBand(1)->SetNoDataValue(-9999);
+
+    int nCols = pRegionsRaster->GetRasterXSize();
+    int nRows = pRegionsRaster->GetRasterYSize();
+
+    QVector<double> maxElev(nRegions, 0.0);
+
+    float *regVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *depVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *demVal = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    for (int i=0; i<nRows; i++)
+    {
+        pRegionsRaster->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, regVal, nCols, 1, GDT_Float32, 0, 0);
+        pDem->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, demVal, nCols, 1, GDT_Float32, 0, 0);
+        for (int j=0; j<nCols; j++)
+        {
+            if (regVal[j] > 0)
+            {
+                int index = regVal[j] - 1;
+                if (demVal[j] > maxElev[index])
+                {
+                    maxElev[index] = demVal[j];
+                }
+            }
+        }
+    }
+
+    for (int i=0; i<nRows; i++)
+    {
+        pRegionsRaster->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, regVal, nCols, 1, GDT_Float32, 0, 0);
+        pDem->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, demVal, nCols, 1, GDT_Float32, 0, 0);
+        for (int j=0; j<nCols; j++)
+        {
+            if (regVal[j] > 0)
+            {
+                int index = regVal[j] - 1;
+                depVal[j] = (maxElev[index] + 0.01) - demVal[j];
+            }
+            else
+            {
+                depVal[j] = -9999;
+            }
+        }
+        pDepthRaster->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, depVal, nCols, 1, GDT_Float32, 0, 0);
+    }
+
+    CPLFree(regVal);
+    CPLFree(depVal);
+    CPLFree(demVal);
+
+    GDALClose(pRegionsRaster);
+    GDALClose(pDepthRaster);
+    GDALClose(pDem);
 }
 
 double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y)
