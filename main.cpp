@@ -31,7 +31,7 @@ double getRasterX(double transform[], int col);
 double getRasterY(double transform[], int row);
 double getRasterValueAtPoint(const char *rasterPath, double xCoord, double yCoord);
 double getWetArea(const char *rasterPath);
-int pointsInPolygon2(const char *rasterPath, const char *polygonPath);
+int pointsInPolygon2(const char *rasterPath, const char *rasterOut, const char *polygonPath);
 int pointsInPolygon(const char *pointsPath, const char *polygonPath, const char *pointLayerName);
 double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
 int summarizeInundationRaster(const char *rasterPath, const char *outputCsv, int nValues, QVector<int> &thresholds, QVector<double> &areas);
@@ -60,17 +60,17 @@ int run()
     OGRRegisterAll();
 
     const char *shpIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/01_shpIn";
-    const char *shpOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/05_shpOut";
-    //const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
-    const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
-    //const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/06_rasOut/ponddepth_1m.tif";
-    const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/06_rasOut/ponddepth_10m.tif";
-    //const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/06_rasOut/freqwet_1m.tif";
-    const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/06_rasOut/freqwet_10m.tif";
-    //const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/06_rasOut/freqwet_1m.csv";
-    const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/06_rasOut/freqwet_10m.csv";
-    //const char *pointLayerName = "dempoints_1m_clip2";
-    const char *pointLayerName = "dempoints_10m_clip2";
+    const char *shpOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/03_shpOut";
+    const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
+    //const char *demIn = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+    const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
+    //const char *depOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
+    const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
+    //const char *freqOut = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
+    const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
+    //const char *csv = "E:/etal/Projects/NonLoc/Beaver_Modeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
+    const char *pointLayerName = "dempoints_1m_clip2";
+    //const char *pointLayerName = "dempoints_10m_clip2";
     const char *damLayerName = "Dams_BRAT_join5_UTM12N";
     //const char *damLayerName = "Dams_ESRI";
 
@@ -93,8 +93,8 @@ int run()
         cleanup(shpOut);
         damHeightSum = createDamPoints(demIn, shpIn, shpOut, damLayerName);
         createSearchPolygons(shpOut);
-        pointsInPolygon2(demIn, shpOut);
-        createRasterFromPoint(depOut, shpOut, rows, cols, transform);
+        pointsInPolygon2(demIn, depOut,shpOut);
+        //createRasterFromPoint(depOut, shpOut, rows, cols, transform);
         updateInundationRaster(freqOut, depOut);
         areaSum = getWetArea(depOut);
         qDebug()<<"Finished"<<i+1<<" of "<<nIterations<< ": Mean area = "<<areaSum<<" : Mean Dam Height = "<<damHeightSum;
@@ -743,7 +743,7 @@ int pointsInPolygon(const char *pointsPath, const char *polygonPath, const char 
     return 0;
 }
 
-int pointsInPolygon2(const char *rasterPath, const char *polygonPath)
+int pointsInPolygon2(const char *rasterPath, const char *rasterOut, const char *polygonPath)
 {
     OGRDataSource *pPolyDS;
     OGRSFDriver *pDriverShp;
@@ -754,14 +754,16 @@ int pointsInPolygon2(const char *rasterPath, const char *polygonPath)
     double geot[6];
     pRaster->GetGeoTransform(geot);
 
+    double noData = -9999;
+
+    GDALDriver *pDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    GDALDataset *pRasterOut = pDriver->Create(rasterOut,pRaster->GetRasterXSize(), pRaster->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pRasterOut->SetGeoTransform(geot);
+    pRasterOut->GetRasterBand(1)->Fill(noData);
+    pRasterOut->GetRasterBand(1)->SetNoDataValue(noData);
+
     pPolyDS = pDriverShp->CreateDataSource(polygonPath);
     OGRLayer *pPolyLayer = pPolyDS->GetLayerByName("DamSearchPolygons");
-    OGRLayer *pDamPointLayer = pPolyDS->CreateLayer("PondPts", pPolyLayer->GetSpatialRef(), wkbPoint, NULL);
-    OGRFieldDefn field("dam_elev", OFTReal);
-    pDamPointLayer->CreateField(&field);
-    field.SetName("elev");
-    field.SetType(OFTReal);
-    pDamPointLayer->CreateField(&field);
 
     float *val = (float*) CPLMalloc(sizeof(float));
 
@@ -801,15 +803,8 @@ int pointsInPolygon2(const char *rasterPath, const char *polygonPath)
                 {
                     double delev = pPolyFeat->GetFieldAsDouble("d_elev");
                     pRaster->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, val, 1, 1, GDT_Float32, 0, 0);
-                    OGRFeature *newFeature = OGRFeature::CreateFeature(pDamPointLayer->GetLayerDefn());
-                    newFeature->SetField("dam_elev", delev);
-                    newFeature->SetField("elev", *val);
-                    OGRPoint newPoint;
-                    newPoint.setX(x);
-                    newPoint.setY(y);
-                    newFeature->SetGeometry(&newPoint);
-                    pDamPointLayer->CreateFeature(newFeature);
-                    OGRFeature::DestroyFeature(newFeature);
+                    *val = delev - *val;
+                    pRasterOut->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, val, 1, 1, GDT_Float32, 0, 0);
                 }
             }
         }
@@ -821,6 +816,7 @@ int pointsInPolygon2(const char *rasterPath, const char *polygonPath)
     OGRDataSource::DestroyDataSource(pPolyDS);
     CPLFree(val);
     GDALClose(pRaster);
+    GDALClose(pRasterOut);
 
     return 0;
 }
@@ -870,7 +866,6 @@ double sampleRasterAlongLine_LowVal(const char * rasterPath, double startX, doub
             x = newX, y = newY;
         }
     }
-    //qDebug()<<"done sampling";
 
     return lowValue;
 }
@@ -922,18 +917,6 @@ int summarizeInundationRaster(const char *rasterPath, const char *outputCsv, int
     }
 
     file.close();
-    QFile file2(csvPath+"rand");
-    if (!file2.open(QIODevice::ReadWrite))
-    {
-        qDebug()<<"error opening summary csv";
-        return 1;
-    }
-    QTextStream stream2(&file2);
-    for (int i=0; i<HEIGHTS.length(); i++)
-    {
-        stream2<<HEIGHTS[i]<<endl;
-    }
-    file2.close();
     CPLFree(value);
     GDALClose(pRaster);
 
