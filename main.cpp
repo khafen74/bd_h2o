@@ -12,7 +12,6 @@ const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
 
 int run();
 int testRegions();
-int testRandom();
 double addDegrees(double base, double addValue);
 double angleBetweenLines(double x1, double y1, double x2, double y2, double x3, double y3);
 double calcAzimuth(double startX, double startY, double endX, double endY);
@@ -20,11 +19,13 @@ int calcCoords(double startX, double startY, double azimuth, double distance, do
 int cleanup(const char *cleanDir);
 int cleanInundationRaster(const char *rasterPath);
 double createDamPoints(const char *demPath, const char *inputFeaturePath, const char *outputLayerName, const char *layerName);
+double createDamPointsBRAT(const char *demPath, const char *inputFeaturePath, const char *outputFeaturePath, double propOcc);
 int createInundationRaster(const char *rasterPath, int rows, int cols, double transform[]);
 int createRasterFromPoint(const char *rasterPath, const char *pointPath, int rows, int cols, double transform[]);
 int createSearchPolygons(const char *outputFeaturePath);
-double getDamHeight();
-double getDamHeightLnorm();
+double getNormalRandom();
+double getDamHeightLnorm(double mean, double sd);
+double getDamHeightNorm(double mean, double sd);
 int getRasterCol(double transform[6], double xCoord);
 int getRasterRow(double transform[6], double yCoord);
 double getRasterX(double transform[], int col);
@@ -45,8 +46,8 @@ int main(int argc, char *argv[])
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    //run();
-    testRegions();
+    run();
+    //testRegions();
     //testRandom();
 
     QDateTime endTime = QDateTime::currentDateTime();
@@ -109,7 +110,8 @@ int run()
     for (int i=0; i<nIterations; i++)
     {
         cleanup(shpOut);
-        damHeightSum = createDamPoints(demIn, shpIn, shpOut, damLayerName);
+        //damHeightSum = createDamPoints(demIn, shpIn, shpOut, damLayerName);
+        damHeightSum = createDamPointsBRAT(demIn, shpIn, shpOut, 1.0);
         createSearchPolygons(shpOut);
         pointsInPolygon2(demIn, depOut,shpOut);
         updateInundationRaster(freqOut, depOut);
@@ -121,7 +123,9 @@ int run()
     summarizeInundationRaster(freqOut, csv, nIterations, qvWetThresh, qvWetArea);
 
     Raster raster;
-    raster.greaterThan(freqOut, binRas, 650.0);
+    //raster.greaterThan(freqOut, binRas, 0.0); //for testing
+    //raster.greaterThan(freqOut, binRas, 470); //for tf 1 meter LiDaR
+    raster.greaterThan(freqOut, binRas, 580); //for tf 10 meter NED
     int regions = raster.regions(binRas, regRas);
     regionsToDepth(regRas, depOut, demIn, regions);
 
@@ -131,27 +135,23 @@ int run()
 int testRegions()
 {
     const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
-    const char *binRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin_567.tif";
-    const char *regRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/reg_567.tif";
+    const char *binRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin.tif";
+    const char *regRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/reg.tif";
     const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
-    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m_567.tif";
+    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m_470.tif";
+
+//    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
+//    const char *binRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin.tif";
+//    const char *regRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/reg.tif";
+//    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+//    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m_580.tif";
 
     Raster raster;
-    raster.greaterThan(freqOut, binRas, 567.0);
+    raster.greaterThan(freqOut, binRas, 470.0);
     int count = raster.regions(binRas, regRas);
     qDebug()<<"Regions"<<count;
     regionsToDepth(regRas, depOut, demIn, count);
 
-    return 0;
-}
-
-int testRandom()
-{
-    for (int i=0; i<1000; i++)
-    {
-        qDebug()<<getDamHeight();
-        //qDebug()<<uniformRandom();
-    }
     return 0;
 }
 
@@ -317,9 +317,6 @@ double createDamPoints(const char *demPath, const char *inputFeaturePath, const 
     OGRDataSource *pInDs, *pOutDs;
     OGRLayer *pDamsIn, *pDamsOut, *pBratIn;
 
-    GDALDriver *pDriverTiff;
-    pDriverTiff = GetGDALDriverManager()->GetDriverByName("GTiff");
-
     OGRSFDriver *pDriverShp;
     OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
     pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
@@ -364,7 +361,7 @@ double createDamPoints(const char *demPath, const char *inputFeaturePath, const 
 
     for (int i=0; i<nDams; i++)
     {
-        damHeight = getDamHeight();
+        damHeight = getDamHeightLnorm(-0.0999, 0.42);
         damSum += damHeight;
         if (damHeight < 0.3 || damHeight > 2.5)
         {
@@ -418,6 +415,119 @@ double createDamPoints(const char *demPath, const char *inputFeaturePath, const 
     OGRDataSource::DestroyDataSource(pOutDs);
 
     return damSum/(nDams*1.0);
+}
+
+double createDamPointsBRAT(const char *demPath, const char *inputFeaturePath, const char *outputFeaturePath, double propOcc)
+{
+    OGRDataSource *pInDs, *pOutDs;
+    OGRLayer *pDamsOut, *pBratIn;
+
+    OGRSFDriver *pDriverShp;
+    OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
+    pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
+
+    pInDs = pDriverShp->CreateDataSource(inputFeaturePath, NULL);
+    pOutDs = pDriverShp->CreateDataSource(outputFeaturePath, NULL);
+
+    pBratIn = pInDs->GetLayerByName("BRAT_TempleFk_WS");
+
+    pDamsOut = pOutDs->CreateLayer("ModeledDamPoints", pBratIn->GetSpatialRef(), wkbPoint, NULL);
+
+
+    OGRFieldDefn field("endx", OFTReal);
+    pDamsOut->CreateField(&field);
+    field.SetName("endy");
+    field.SetType(OFTReal);
+    pDamsOut->CreateField(&field);
+    field.SetName("az_us");
+    field.SetType(OFTReal);
+    pDamsOut->CreateField(&field);
+    field.SetName("g_elev");
+    field.SetType(OFTReal);
+    pDamsOut->CreateField(&field);
+    field.SetName("d_elev");
+    field.SetType(OFTReal);
+    pDamsOut->CreateField(&field);
+    field.SetName("slope");
+    field.SetType(OFTReal);
+    pDamsOut->CreateField(&field);
+
+    const char *slopeField = "iGeo_Slope";
+    const char *densField = "oCC_EX";
+    double sampleDist = 50.0;
+    double heigthSum = 0.0;
+    int nDams = 0;
+
+    OGRFeature *pBratFeat;
+    OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsOut->GetLayerDefn());
+    int nFeatures = pBratIn->GetFeatureCount();
+
+    for (int i=0; i<nFeatures; i++)
+    {
+        int nDamCount = 0;
+        double length, damDens, slope, spacing, damHeight, damElev, elev, azimuthStart, dist, endx, endy, end_elev;
+        OGRPoint point1, point2;
+        pBratFeat = pBratIn->GetFeature(i);;
+        OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
+        OGRLineString *pBratLine = (OGRLineString*) pGeom;
+        int nPoints = pBratLine->getNumPoints();
+
+        point1.setX(pBratLine->getX(0));
+        point1.setY(pBratLine->getY(0));
+        point2.setX(pBratLine->getX(nPoints-1));
+        point2.setY(pBratLine->getY(nPoints-1));
+
+        length = pBratLine->get_Length();
+        damDens = pBratFeat->GetFieldAsDouble(densField);
+        slope = pBratFeat->GetFieldAsDouble(slopeField);
+
+        nDamCount = round(length * (damDens/1000.0) * propOcc);
+
+        if (nDamCount > 0)
+        {
+            spacing = length / (nDamCount*1.0);
+        }
+        else
+        {
+            spacing = 0.0;
+        }
+        azimuthStart = calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
+        end_elev = sampleRasterAlongLine_LowVal(demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
+        dist = (damHeight/slope) * 1.0;
+        if (dist > spacing)
+        {
+            dist = spacing;
+        }
+        nDams += nDamCount;
+
+        for (int j=0; j<nDamCount; j++)
+        {
+            OGRPoint damPoint;
+            double pointDist = length - (spacing * (j * 1.0));
+            damHeight = getDamHeightLnorm(-0.0999, 0.42);
+            heigthSum += damHeight;
+            pBratLine->Value(pointDist, &damPoint);
+            double x = damPoint.getX();
+            double y = damPoint.getY();
+            elev = sampleRasterAlongLine_LowVal(demPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
+            damPoint.setX(x);
+            damPoint.setY(y);
+            damElev = elev + damHeight;
+            pDamFeat->SetField("d_elev", damElev);
+            pDamFeat->SetField("g_elev", elev);
+            pDamFeat->SetField("slope", slope);
+            pDamFeat->SetField("az_us", calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy));
+            pDamFeat->SetField("endx", x);
+            pDamFeat->SetField("endy", y);
+            pDamFeat->SetGeometry(&damPoint);
+            pDamsOut->CreateFeature(pDamFeat);
+        }
+    }
+    OGRFeature::DestroyFeature(pDamFeat);
+    OGRDataSource::DestroyDataSource(pInDs);
+    OGRDataSource::DestroyDataSource(pOutDs);
+
+    return heigthSum/(nDams*1.0);
 }
 
 int createInundationRaster(const char *rasterPath, int rows, int cols, double transform[])
@@ -559,23 +669,8 @@ int createSearchPolygons(const char *outputFeaturePath)
     OGRDataSource::DestroyDataSource(pOutDs);
 }
 
-double getDamHeight()
+double getNormalRandom()
 {
-//    int randVal, high, low;
-//    double returnVal;
-
-//    high = 22;
-//    low = 3;
-
-//    randVal = (qrand() % ((high+1)-low)+low);
-//    returnVal = randVal/10.0;
-
-//    return returnVal;
-
-//    double u1 = uniformRandom();
-//    double u2 = uniformRandom();
-//    return cos(8.*atan(1.)*u2)*sqrt(-2.*log(u1));
-
     double x1, x2, w, y1, y2;
 
     do
@@ -586,20 +681,28 @@ double getDamHeight()
     }
     while (w >= 1.0);
 
-    //qDebug()<<"w"<<w<<"logw"<<log(w);
     w = sqrt((-2.0 * log(w)) / w);
 
     y1 = x1 * w;
     y2 = x2 * w;
 
-    return exp(-0.0999+0.42*y1);
+    return y1;
 }
 
-double getDamHeightLnorm()
+double getDamHeightLnorm(double mean, double sd)
 {
-    double returnVal;
+    double rn = getNormalRandom();
+    double lnorm = exp(mean+sd*rn);
 
-    return returnVal;
+    return lnorm;
+}
+
+double getDamHeightNorm(double mean, double sd)
+{
+    double rn = getNormalRandom();
+    double norm = (mean+sd*rn);
+
+    return norm;
 }
 
 int getRasterCol(double transform[6], double xCoord)
