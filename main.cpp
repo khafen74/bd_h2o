@@ -12,6 +12,7 @@ const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
 
 int run();
 int testRegions();
+void areaAndVolume();
 double addDegrees(double base, double addValue);
 double angleBetweenLines(double x1, double y1, double x2, double y2, double x3, double y3);
 double calcAzimuth(double startX, double startY, double endX, double endY);
@@ -46,9 +47,9 @@ int main(int argc, char *argv[])
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    run();
-    //testRegions();
-    //testRandom();
+    //run();
+    testRegions();
+    //areaAndVolume();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -68,20 +69,20 @@ int run()
 //    const char *shpIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
 //    const char *shpOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
 
-    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
-    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
-    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
-    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
+//    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+//    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
+//    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
+//    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
 
 //    const char *demIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
 //    const char *depOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m.tif";
 //    const char *freqOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
 //    const char *csv = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
 
-//    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
-//    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
-//    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
-//    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
+    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
+    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
+    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
+    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
 
 
     const char *binRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin.tif";
@@ -90,7 +91,7 @@ int run()
 //    const char *binRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin.tif";
 //    const char *regRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/reg.tif";
 
-    const char *damLayerName = "Dams_BRAT_join5_UTM12N";
+    const char *damLayerName = "ESRIDams_BRAT_join";
     //const char *damLayerName = "Dams_ESRI";
 
     GDALDataset *pDem = (GDALDataset*) GDALOpen(demIn, GA_ReadOnly);
@@ -111,7 +112,7 @@ int run()
     {
         cleanup(shpOut);
         //damHeightSum = createDamPoints(demIn, shpIn, shpOut, damLayerName);
-        damHeightSum = createDamPointsBRAT(demIn, shpIn, shpOut, 1.0);
+        damHeightSum = createDamPointsBRAT(demIn, shpIn, shpOut, 0.75);
         createSearchPolygons(shpOut);
         pointsInPolygon2(demIn, depOut,shpOut);
         updateInundationRaster(freqOut, depOut);
@@ -146,13 +147,29 @@ int testRegions()
 //    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
 //    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_10m_580.tif";
 
+    const char *in = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/11092015/BRAT_50EX/ponddepth_1m_BRAT50.tif";
+    const char *out = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/11092015/BRAT_50EX/regions_1m.tif";
+    const char *inter = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/11092015/inter.tif";
+
     Raster raster;
-    raster.greaterThan(freqOut, binRas, 470.0);
-    int count = raster.regions(binRas, regRas);
+    qDebug()<<"creating intermediate";
+    raster.greaterThan(in, inter, 0.0);
+    qDebug()<<"counting regions";
+    int count = raster.regions(inter, out);
     qDebug()<<"Regions"<<count;
-    regionsToDepth(regRas, depOut, demIn, count);
+    //regionsToDepth(regRas, depOut, demIn, count);
 
     return 0;
+}
+
+void areaAndVolume()
+{
+    const char *in = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/11092015/BRAT_50EX/ponddepth_1m_BRAT50.tif";
+
+    Raster raster;
+    double area = raster.area(in);
+    double sum = raster.sum(in);
+    qDebug()<<"area"<<area<<"depth"<<sum<<"volume 1m"<<sum<<"volume 10m"<<sum*8.92*8.92;
 }
 
 double addDegrees(double base, double addValue)

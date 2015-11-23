@@ -54,6 +54,43 @@ void Raster::add(const char *sourcePath, const char *addPath)
     add(addPath);
 }
 
+double Raster::area()
+{
+    GDALDataset *pRaster;
+
+    pRaster  = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+
+    float *value = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    int nCount = 0.0;
+
+    for (int i=0; i<nRows; i++)
+    {
+        pRaster->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, value, nCols, 1, GDT_Float32, 0, 0);
+
+        for (int j=0; j<nCols; j++)
+        {
+            if (value[j] != noData)
+            {
+                nCount++;
+            }
+        }
+    }
+
+    double area = nCount * fabs(transform[1]*transform[5]);
+
+    CPLFree(value);
+    GDALClose(pRaster);
+
+    return area;
+}
+
+double Raster::area(const char *sourcePath)
+{
+    setProperties(sourcePath);
+    return area();
+}
+
 void Raster::aspect(const char *aspectPath)
 {
     GDALDataset *pSourceDS, *pAspectDS;
