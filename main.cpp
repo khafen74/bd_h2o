@@ -20,7 +20,7 @@ int calcCoords(double startX, double startY, double azimuth, double distance, do
 int cleanup(const char *cleanDir);
 int cleanInundationRaster(const char *rasterPath);
 double createDamPoints(const char *demPath, const char *inputFeaturePath, const char *outputLayerName, const char *layerName);
-double createDamPointsBRAT(const char *demPath, const char *inputFeaturePath, const char *outputFeaturePath, double propOcc);
+double createDamPointsBRAT(const char *demPath, const char *inputFeaturePath, const char *layerName, const char *outputFeaturePath, double propOcc);
 int createInundationRaster(const char *rasterPath, int rows, int cols, double transform[]);
 int createRasterFromPoint(const char *rasterPath, const char *pointPath, int rows, int cols, double transform[]);
 int createSearchPolygons(const char *outputFeaturePath);
@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    //run();
-    testRegions();
+    run();
+    //testRegions();
     //areaAndVolume();
 
     QDateTime endTime = QDateTime::currentDateTime();
@@ -63,8 +63,8 @@ int run()
     GDALAllRegister();
     OGRRegisterAll();
 
-    const char *shpIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
-    const char *shpOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
+//    const char *shpIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
+//    const char *shpOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
 
 //    const char *shpIn = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn";
 //    const char *shpOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
@@ -79,19 +79,28 @@ int run()
 //    const char *freqOut = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.tif";
 //    const char *csv = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_10m.csv";
 
-    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
-    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
-    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
-    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
+//    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
+//    const char *depOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/ponddepth_1m.tif";
+//    const char *freqOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.tif";
+//    const char *csv = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/freqwet_1m.csv";
+
+    const char *shpIn = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Shapefiles";
+    const char *shpOut = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Results/Shapefile";
+
+    const char *demIn = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Raster/lc_dem_10m.tif";
+    const char *depOut = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Results/Raster/dep.tif";
+    const char *freqOut = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Results/Raster/freqwet.tif";
+    const char *csv = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Results/csv/freqwet.csv";
 
 
-    const char *binRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin.tif";
-    const char *regRas = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/reg.tif";
+    const char *binRas = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Results/Raster/bin.tif";
+    const char *regRas = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Results/Raster/reg.tif";
 
 //    const char *binRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/bin.tif";
 //    const char *regRas = "C:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/04_rasOut/reg.tif";
 
     const char *damLayerName = "ESRIDams_BRAT_join";
+    const char *bratLayerName = "lc_brat";
     //const char *damLayerName = "Dams_ESRI";
 
     GDALDataset *pDem = (GDALDataset*) GDALOpen(demIn, GA_ReadOnly);
@@ -104,7 +113,7 @@ int run()
     GDALClose(pDem);
 
     createInundationRaster(freqOut, rows, cols, transform);
-    int nIterations = 1000;
+    int nIterations = 100;
     double damHeightSum = 0.0, areaSum = 0.0;
 
     srand(time(NULL));
@@ -112,7 +121,7 @@ int run()
     {
         cleanup(shpOut);
         //damHeightSum = createDamPoints(demIn, shpIn, shpOut, damLayerName);
-        damHeightSum = createDamPointsBRAT(demIn, shpIn, shpOut, 0.75);
+        damHeightSum = createDamPointsBRAT(demIn, shpIn, bratLayerName, shpOut, 0.25);
         createSearchPolygons(shpOut);
         pointsInPolygon2(demIn, depOut,shpOut);
         updateInundationRaster(freqOut, depOut);
@@ -126,7 +135,7 @@ int run()
     Raster raster;
     //raster.greaterThan(freqOut, binRas, 0.0); //for testing
     //raster.greaterThan(freqOut, binRas, 470); //for tf 1 meter LiDaR
-    raster.greaterThan(freqOut, binRas, 580); //for tf 10 meter NED
+    raster.greaterThan(freqOut, binRas, 50); //for tf 10 meter NED
     int regions = raster.regions(binRas, regRas);
     regionsToDepth(regRas, depOut, demIn, regions);
 
@@ -434,7 +443,7 @@ double createDamPoints(const char *demPath, const char *inputFeaturePath, const 
     return damSum/(nDams*1.0);
 }
 
-double createDamPointsBRAT(const char *demPath, const char *inputFeaturePath, const char *outputFeaturePath, double propOcc)
+double createDamPointsBRAT(const char *demPath, const char *inputFeaturePath, const char *layerName, const char *outputFeaturePath, double propOcc)
 {
     OGRDataSource *pInDs, *pOutDs;
     OGRLayer *pDamsOut, *pBratIn;
@@ -446,7 +455,7 @@ double createDamPointsBRAT(const char *demPath, const char *inputFeaturePath, co
     pInDs = pDriverShp->CreateDataSource(inputFeaturePath, NULL);
     pOutDs = pDriverShp->CreateDataSource(outputFeaturePath, NULL);
 
-    pBratIn = pInDs->GetLayerByName("BRAT_TempleFk_WS");
+    pBratIn = pInDs->GetLayerByName(layerName);
 
     pDamsOut = pOutDs->CreateLayer("ModeledDamPoints", pBratIn->GetSpatialRef(), wkbPoint, NULL);
 
@@ -664,6 +673,11 @@ int createSearchPolygons(const char *outputFeaturePath)
         distance = (pDamFeature->GetFieldAsDouble("d_elev")-pDamFeature->GetFieldAsDouble("g_elev"))/slope;
         damPoint = (OGRPoint*) pDamFeature->GetGeometryRef();
 
+        if (distance > 500.0)
+        {
+            distance = 500.0;
+        }
+
         for (int j=0; j<5; j++)
         {
             azimuthCurrent = addDegrees(azimuthStart, ANGLE_OFFSET[j]);
@@ -681,6 +695,7 @@ int createSearchPolygons(const char *outputFeaturePath)
         pSearchPolygons->CreateFeature(pPolyFeature);
         OGRFeature::DestroyFeature(pPolyFeature);
         OGRFeature::DestroyFeature(pDamFeature);
+
     }
 
     OGRDataSource::DestroyDataSource(pOutDs);
