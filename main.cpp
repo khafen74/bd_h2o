@@ -7,6 +7,7 @@
 #include "ogr_core.h"
 #include "ogr_api.h"
 #include "raster.h"
+#include "geometry.h"
 
 const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
 

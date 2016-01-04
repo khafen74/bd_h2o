@@ -3,8 +3,8 @@
 
 #include "gdal_priv.h"
 #include <QtCore>
+#include "geometry.h"
 
-const double PI = 3.14159265;
 const int ROW_OFFSET[9] = {-1,-1,-1,0,0,0,1,1,1};
 const int COL_OFFSET[9] = {-1,0,1,-1,0,1,-1,0,1};
 const int ROW_OFFSET5[25] = {-2,-2,-2,-2,-2,-1,-1,-1,-1,-1,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2};
@@ -26,8 +26,10 @@ public:
     void filterLowPass(const char *sourceRaster, const char *filterRaster);
     double findMax(const char *rasterPath);
     void fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int rows, double noDataValue, double inTransform[], int headerRows = 0);
+    int getCol(double xCoord);
     int getCols();
     const char *getPath();
+    double getRow(double yCoord);
     int getRows();
     void greaterThan(const char *outPath, double value);
     void greaterThan(const char *inPath, const char *outPath, double value);
@@ -35,6 +37,8 @@ public:
     void hillshade(const char *rasterPath, const char *hlsdPath);
     int regions(const char *regionsRaster);
     int regions(const char *inputRaster, const char *regionsRaster);
+    double sampleAlongLine_LowVal(double startX, double startY, double azimuth, double distance, double &x, double &y);
+    double sampleAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
     void setProperties(const char *rasterPath);
     void slopeTOF(const char *slopePath);
     void slopeTOF(const char *sourcePath, const char *slopePath);
@@ -45,6 +49,10 @@ public:
     void subtract(const char *sourcePath, const char *subtractPath, const char *outputPath);
     double sum();
     double sum(const char *rasterPath);
+    double valueAtPoint(double xCoord, double yCoord);
+    double valueAtPoint(const char *rasterPath, double xCoord, double yCoord);
+    double xCoordinate(int col);
+    double yCoordinate(int row);
     void zeroToNoData(const char *sourcePath, double noDataValue);
 protected:
 

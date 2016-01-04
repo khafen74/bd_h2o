@@ -356,6 +356,18 @@ void Raster::fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int 
     CPLFree(rasVal);
 }
 
+int Raster::getCol(double xCoord)
+{
+    int col;
+    double xOffset, xDiv;
+
+    xOffset = xCoord - transform[0];
+    xDiv = xOffset/transform[1];
+    col = floor(xDiv);
+
+    return col;
+}
+
 int Raster::getCols()
 {
     return nCols;
@@ -364,6 +376,19 @@ int Raster::getCols()
 const char *Raster::getPath()
 {
     return m_rasterPath;
+}
+
+double Raster::getRow(double yCoord)
+{
+    int row;
+
+    double yOffset, yDiv;
+
+    yOffset = transform[3] - yCoord;
+    yDiv = yOffset/fabs(transform[5]);
+    row = floor(yDiv);
+
+    return row;
 }
 
 int Raster::getRows()
@@ -621,6 +646,64 @@ int Raster::regions(const char *inputRaster, const char *regionsRaster)
     return regionsValue;
 }
 
+double Raster::sampleAlongLine_LowVal(double startX, double startY, double azimuth, double distance, double &x, double &y)
+{
+    double az1, az2, interval;
+    double transform[6];
+    double newX, newY, rasValue, lowValue;
+    int nSamples;
+    az1 = Geometry::addDegrees(azimuth, 90.0);
+    az2 = Geometry::addDegrees(azimuth, -90.0);
+
+    //qDebug()<<"opening raster";
+    GDALDataset *pRas;
+    pRas = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pRas->GetGeoTransform(transform);
+    GDALClose(pRas);
+    //qDebug()<<"raster closed";
+
+    interval = transform[1];
+    nSamples = ceil(distance/interval);
+
+    //qDebug()<<"starting loop";
+    for (int i=0; i<nSamples; i++)
+    {
+        Geometry::calcCoords(startX, startY, az1, interval*(i+1), newX, newY);
+        rasValue = valueAtPoint(newX, newY);
+        if (i==0)
+        {
+            lowValue = rasValue;
+            x = newX, y = newY;
+        }
+        else
+        {
+            if (rasValue < lowValue)
+            {
+                lowValue = rasValue;
+                x = newX, y = newY;
+            }
+        }
+        Geometry::calcCoords(startX, startY, az2, interval*(i+1), newX, newY);
+        rasValue = valueAtPoint(newX, newY);
+        if (rasValue < lowValue)
+        {
+            lowValue = rasValue;
+            x = newX, y = newY;
+        }
+    }
+
+    return lowValue;
+}
+
+double Raster::sampleAlongLine_LowVal(const char *rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y)
+{
+    setProperties(rasterPath);
+
+    double value = sampleAlongLine_LowVal(startX, startY, azimuth, distance, x, y);
+
+    return value;
+}
+
 void Raster::setProperties(const char *rasterPath)
 {
     loadDrivers();
@@ -837,6 +920,65 @@ double Raster::sum(const char *rasterPath)
     dSum = sum();
 
     return dSum;
+}
+
+double Raster::valueAtPoint(double xCoord, double yCoord)
+{
+    GDALDataset *pRaster;
+    double transform[6];
+    double value, xOffset, yOffset, xDiv, yDiv;
+    int row, col;
+
+    pRaster = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+
+    pRaster->GetGeoTransform(transform);
+
+    xOffset = xCoord - transform[0];
+    yOffset = transform[3] - yCoord;
+
+    xDiv = xOffset/transform[1];
+    yDiv = yOffset/transform[1];
+
+    row = floor(yDiv);
+    col = floor(xDiv);
+
+    float *rasVal = (float*) CPLMalloc(sizeof(float)*1);
+
+    pRaster->GetRasterBand(1)->RasterIO(GF_Read, col, row, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+
+    value = *rasVal;
+
+    GDALClose(pRaster);
+    CPLFree(rasVal);
+
+    return value;
+}
+
+double Raster::valueAtPoint(const char *rasterPath, double xCoord, double yCoord)
+{
+    setProperties(rasterPath);
+
+    double value = valueAtPoint(xCoord, yCoord);
+
+    return value;
+}
+
+double Raster::xCoordinate(int col)
+{
+    double x;
+
+    x = transform[0] + (col*transform[1] + (0.5*transform[1]));
+
+    return x;
+}
+
+double Raster::yCoordinate(int row)
+{
+    double y;
+
+    y = transform[3] - ((row*fabs(transform[5])+ (0.5*fabs(transform[5]))));
+
+    return y;
 }
 
 void Raster::zeroToNoData(const char *sourcePath, double noDataValue)

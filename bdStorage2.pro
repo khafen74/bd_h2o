@@ -16,7 +16,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    raster.cpp
+    raster.cpp \
+    geometry.cpp \
+    random.cpp \
+    statistics.cpp
 
 win32: LIBS += -L$$PWD/../../../../../../../MinGW/msys/1.0/local/lib/ -llibgdal
 
@@ -24,4 +27,7 @@ INCLUDEPATH += $$PWD/../../../../../../../MinGW/msys/1.0/local/include
 DEPENDPATH += $$PWD/../../../../../../../MinGW/msys/1.0/local/include
 
 HEADERS += \
-    raster.h
+    raster.h \
+    geometry.h \
+    random.h \
+    statistics.h
