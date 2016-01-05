@@ -58,7 +58,7 @@ protected:
 
 private:
     int nRows, nCols;
-    double  transform[6], noData;
+    double transform[6], noData;
     const char *m_rasterPath;
     GDALDriver *pDriverTiff;
 

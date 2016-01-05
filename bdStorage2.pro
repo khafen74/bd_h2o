@@ -19,7 +19,8 @@ SOURCES += main.cpp \
     raster.cpp \
     geometry.cpp \
     random.cpp \
-    statistics.cpp
+    statistics.cpp \
+    storagemodel.cpp
 
 win32: LIBS += -L$$PWD/../../../../../../../MinGW/msys/1.0/local/lib/ -llibgdal
 
@@ -30,4 +31,5 @@ HEADERS += \
     raster.h \
     geometry.h \
     random.h \
-    statistics.h
+    statistics.h \
+    storagemodel.h
