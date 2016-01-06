@@ -20,7 +20,10 @@ SOURCES += main.cpp \
     geometry.cpp \
     random.cpp \
     statistics.cpp \
-    storagemodel.cpp
+    storagemodel.cpp \
+    dampoints.cpp \
+    bratlines.cpp \
+    dampolygons.cpp
 
 win32: LIBS += -L$$PWD/../../../../../../../MinGW/msys/1.0/local/lib/ -llibgdal
 
@@ -32,4 +35,7 @@ HEADERS += \
     geometry.h \
     random.h \
     statistics.h \
-    storagemodel.h
+    storagemodel.h \
+    dampoints.h \
+    bratlines.h \
+    dampolygons.h

@@ -27,14 +27,14 @@ void Random::setStdDev(double stdev)
 }
 
 //generate random number from normal distribution using Box-Muller Transformation
-double Random::getRandomNormal(double stdev, double mean)
+double Random::random_normal(double stdev, double mean)
 {
     double x1, x2, w, y1, y2;
 
     do
     {
-        x1 = 2.0 * getUniformRandom() - 1.0;
-        x2 = 2.0 * getUniformRandom() - 1.0;
+        x1 = 2.0 * random_uniform() - 1.0;
+        x2 = 2.0 * random_uniform() - 1.0;
         w = x1 * x1 + x2 * x2;
     }
     while (w >= 1.0);
@@ -47,16 +47,16 @@ double Random::getRandomNormal(double stdev, double mean)
     return y1 * stdev + mean;
 }
 
-double Random::getRandomLogNormal(double stdev, double mean)
+double Random::random_lognormal(double stdev, double mean)
 {
-    double rn = getRandomNormal();
+    double rn = random_normal();
     double lnorm = exp(mean+stdev*rn);
 
     return lnorm;
 }
 
 //generate uniform random number between 0 and 1
-double Random::getUniformRandom()
+double Random::random_uniform()
 {
     return ( (double)(rand()) + 1. )/( (double)(RAND_MAX) + 1. );
 }

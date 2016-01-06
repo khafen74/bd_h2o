@@ -183,6 +183,89 @@ void Raster::aspect(const char *sourcePath, const char *aspectPath)
     aspect(aspectPath);
 }
 
+void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygonPath)
+{
+    OGRDataSource *pPolyDS;
+    OGRSFDriver *pDriverShp;
+    OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
+    pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
+
+    GDALDataset *pRaster = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    double geot[6];
+    pRaster->GetGeoTransform(geot);
+
+    double noData = -9999;
+
+    GDALDriver *pDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    GDALDataset *pRasterOut = pDriver->Create(rasterOut,pRaster->GetRasterXSize(), pRaster->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pRasterOut->SetGeoTransform(geot);
+    pRasterOut->GetRasterBand(1)->Fill(noData);
+    pRasterOut->GetRasterBand(1)->SetNoDataValue(noData);
+
+    pPolyDS = pDriverShp->CreateDataSource(polygonPath);
+    OGRLayer *pPolyLayer = pPolyDS->GetLayerByName("DamSearchPolygons");
+
+    float *val = (float*) CPLMalloc(sizeof(float));
+
+    int nPolyCount = pPolyLayer->GetFeatureCount();
+    double angle;
+    for (int i=0; i<nPolyCount; i++)
+    {
+        OGRFeature *pPolyFeat = pPolyLayer->GetFeature(i);
+        OGRPolygon *pPoly = (OGRPolygon*) pPolyFeat->GetGeometryRef();
+        OGRLinearRing *pRing = pPoly->getExteriorRing();
+
+        OGREnvelope ringBound;
+        pRing->getEnvelope(&ringBound);
+
+        int left = getCol(ringBound.MinX)-1;
+        int right = getCol(ringBound.MaxX)+1;
+        int top = getRow(ringBound.MaxY)-1;
+        int bottom = getRow(ringBound.MinY)+1;
+
+        for (int i=top; i<bottom; i++)
+        {
+            for (int j=left; j<right; j++)
+            {
+                int x = xCoordinate(j);
+                int y = yCoordinate(i);
+
+                angle = 0.0;
+                for (int k=0; k<pRing->getNumPoints()-1; k++)
+                {
+                    angle += Geometry::angleBetweenLines(pRing->getX(k), pRing->getY(k), pRing->getX(k+1), pRing->getY(k+1), x, y);
+                }
+                if (angle <PI)
+                {
+                    //point not in polygon
+                }
+                else
+                {
+                    double delev = pPolyFeat->GetFieldAsDouble("d_elev");
+                    pRaster->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, val, 1, 1, GDT_Float32, 0, 0);
+                    *val = delev - *val;
+                    pRasterOut->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, val, 1, 1, GDT_Float32, 0, 0);
+                }
+            }
+        }
+
+        OGRFeature::DestroyFeature(pPolyFeat);
+        //qDebug()<<"finished feature"<<i;
+    }
+
+    OGRDataSource::DestroyDataSource(pPolyDS);
+    CPLFree(val);
+    GDALClose(pRaster);
+    GDALClose(pRasterOut);
+}
+
+void Raster::extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath)
+{
+    setProperties(rasterPath);
+
+    extractByMask_CellCenters(rasterOut, polygonPath);
+}
+
 void Raster::filterLowPass(const char *filterRaster)
 {
     GDALDataset *pSource, *pFilter;

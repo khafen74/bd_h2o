@@ -2,6 +2,9 @@
 #define RASTER_H
 
 #include "gdal_priv.h"
+#include "ogrsf_frmts.h"
+#include "ogr_core.h"
+#include "ogr_api.h"
 #include <QtCore>
 #include "geometry.h"
 
@@ -22,6 +25,8 @@ public:
     void aspect(const char *aspectPath);
     void aspect(const char *sourcePath, const char *aspectPath);
     void demOfDifference(const char *oldDem, const char *newDem, const char *dodRaster);
+    void extractByMask_CellCenters(const char *rasterOut, const char *polygonPath);
+    void extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath);
     void filterLowPass(const char *filterRaster);
     void filterLowPass(const char *sourceRaster, const char *filterRaster);
     double findMax(const char *rasterPath);
@@ -54,6 +59,7 @@ public:
     double xCoordinate(int col);
     double yCoordinate(int row);
     void zeroToNoData(const char *sourcePath, double noDataValue);
+
 protected:
 
 private:

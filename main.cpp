@@ -1,13 +1,7 @@
 #include <QCoreApplication>
 #include <QtCore>
 #include <QDebug>
-#include "gdal.h"
-#include "gdal_priv.h"
-#include "ogrsf_frmts.h"
-#include "ogr_core.h"
-#include "ogr_api.h"
-#include "raster.h"
-#include "geometry.h"
+#include "storagemodel.h"
 
 const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
 
@@ -42,13 +36,16 @@ int summarizeInundationRaster(const char *rasterPath, const char *outputCsv, int
 int updateInundationRaster(const char *updatePath, const char *inputPath);
 double uniformRandom();
 
+int test();
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    run();
+    test();
+    //run();
     //testRegions();
     //areaAndVolume();
 
@@ -57,6 +54,20 @@ int main(int argc, char *argv[])
     qDebug()<<"done"<<startTime.secsTo(endTime)<<startTime.secsTo(endTime)/60.0;
 
     return a.exec();
+}
+
+int test()
+{
+    const char *shpIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn/BRAT_TempleFk_WS.shp";
+    const char *shpOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
+    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+
+    qDebug()<<"starting dam points";
+    DamPoints modeledDams(demIn, shpIn, shpOut, 1.0);
+    DamPolygons maxPondExtents(modeledDams, 3.5);
+    qDebug()<<"done with dam points";
+
+    return 0;
 }
 
 int run()

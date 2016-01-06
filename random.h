@@ -14,9 +14,9 @@ public:
     void setMean(double mean);
     void setStdDev(double stdev);
 
-    static double getRandomNormal(double stdev = 1.0, double mean = 0.0);
-    static double getRandomLogNormal(double stdev = 1.0, double mean = 0.0);
-    static double getUniformRandom();
+    static double random_normal(double stdev = 1.0, double mean = 0.0);
+    static double random_lognormal(double stdev = 1.0, double mean = 0.0);
+    static double random_uniform();
 
 private:
     double m_mean;
