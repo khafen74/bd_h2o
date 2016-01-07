@@ -19,10 +19,13 @@ public:
     void createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
     void createDamPoints_Copy();
     void createFields(OGRLayer *pLayer);
+    const char* getDemPath();
+    const char* getLayerName();
+    const char* getOutDirPath();
     void loadDriver();
     void setBratCapacity(double capacity);
     void setDemPath(const char *demPath);
-    void setFieldValues(OGRFeature *pFeat, double damElev, double groundElev, double slope, double azimuth, double ptX, double ptY);
+    void setFieldValues(OGRFeature *pFeat, int bratID, double damElev, double groundElev, double slope, double azimuth, double ptX, double ptY);
     void setOutDir(const char *outDirPath);
 
 private:

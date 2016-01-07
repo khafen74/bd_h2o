@@ -1,8 +1,15 @@
 #ifndef RANDOM_H
 #define RANDOM_H
 
+#include <QtCore>
 #include <cmath>
 #include <cstdlib>
+
+enum DIST_TYPE
+{
+    RDT_lnorm
+    ,RDT_norm
+};
 
 class Random
 {
@@ -14,8 +21,9 @@ public:
     void setMean(double mean);
     void setStdDev(double stdev);
 
-    static double random_normal(double stdev = 1.0, double mean = 0.0);
-    static double random_lognormal(double stdev = 1.0, double mean = 0.0);
+    static double random_normal(double mean = 0.0, double stdev = 1.0);
+    static double random_lognormal(double mean = 0.0, double stdev = 1.0);
+    static QVector<double> randomSeries(int count = 1000, DIST_TYPE distr = RDT_norm, double mean = 0.0, double stdev = 1.0);
     static double random_uniform();
 
 private:

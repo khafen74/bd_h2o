@@ -27,7 +27,7 @@ void Random::setStdDev(double stdev)
 }
 
 //generate random number from normal distribution using Box-Muller Transformation
-double Random::random_normal(double stdev, double mean)
+double Random::random_normal(double mean, double stdev)
 {
     double x1, x2, w, y1, y2;
 
@@ -47,12 +47,34 @@ double Random::random_normal(double stdev, double mean)
     return y1 * stdev + mean;
 }
 
-double Random::random_lognormal(double stdev, double mean)
+double Random::random_lognormal(double mean, double stdev)
 {
     double rn = random_normal();
     double lnorm = exp(mean+stdev*rn);
 
     return lnorm;
+}
+
+QVector<double> Random::randomSeries(int count, DIST_TYPE distr, double mean, double stdev)
+{
+    QVector<double> sample;
+
+    switch (distr)
+    {
+        case RDT_norm:
+            for (int i=0; i<count; i++)
+            {
+                sample.append(random_normal(mean, stdev));
+            }
+
+        case RDT_lnorm:
+            for (int i=0; i<count; i++)
+            {
+                sample.append(random_lognormal(mean, stdev));
+            }
+    }
+
+    return sample;
 }
 
 //generate uniform random number between 0 and 1

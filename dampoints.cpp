@@ -102,7 +102,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             damPoint.setX(x);
             damPoint.setY(y);
             damElev = elev + damHeight;
-            setFieldValues(pDamFeat, damElev, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
+            setFieldValues(pDamFeat, i, damElev, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
             pDamFeat->SetGeometry(&damPoint);
             pDamsLyr->CreateFeature(pDamFeat);
         }
@@ -112,7 +112,10 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 
 void DamPoints::createFields(OGRLayer *pLayer)
 {
-    OGRFieldDefn field("endx", OFTReal);
+    OGRFieldDefn field("brat_ID", OFTInteger);
+    pLayer->CreateField(&field);
+    field.SetName("endx");
+    field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("endy");
     field.SetType(OFTReal);
@@ -129,6 +132,39 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetName("slope");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
+    field.SetName("area_low");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("area_mean");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("area_hi");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_low");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_mean");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_hi");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+}
+
+const char *DamPoints::getDemPath()
+{
+    return m_demPath;
+}
+
+const char *DamPoints::getLayerName()
+{
+    return m_layerName;
+}
+
+const char *DamPoints::getOutDirPath()
+{
+    return m_outDir;
 }
 
 
@@ -149,8 +185,9 @@ void DamPoints::setDemPath(const char *demPath)
     m_demPath = demPath;
 }
 
-void DamPoints::setFieldValues(OGRFeature *pFeat, double damElev, double groundElev, double slope, double azimuth, double ptX, double ptY)
+void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double damElev, double groundElev, double slope, double azimuth, double ptX, double ptY)
 {
+    pFeat->SetField("brat_ID", bratID);
     pFeat->SetField("d_elev", damElev);
     pFeat->SetField("g_elev", groundElev);
     pFeat->SetField("slope", slope);

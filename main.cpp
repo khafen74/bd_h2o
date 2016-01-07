@@ -2,8 +2,7 @@
 #include <QtCore>
 #include <QDebug>
 #include "storagemodel.h"
-
-const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
+#include "statistics.h"
 
 int run();
 int testRegions();
@@ -62,10 +61,17 @@ int test()
     const char *shpOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
     const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
 
-    qDebug()<<"starting dam points";
-    DamPoints modeledDams(demIn, shpIn, shpOut, 1.0);
-    DamPolygons maxPondExtents(modeledDams, 3.5);
-    qDebug()<<"done with dam points";
+//    qDebug()<<"starting dam points";
+//    DamPoints modeledDams(demIn, shpIn, shpOut, 1.0);
+//    DamPolygons maxPondExtents(modeledDams, 3.5);
+//    qDebug()<<"done with dam points";
+
+    for (int i=0; i<10; i++)
+    {
+        QVector<double> series = Random::randomSeries(10000, RDT_lnorm, -0.09, 0.42);
+        Statistics lognorm(series);
+        qDebug()<<lognorm.calcMeanNormal()<<lognorm.calcMeanLognormal()<<lognorm.calcStdLognormal();
+    }
 
     return 0;
 }
