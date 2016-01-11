@@ -68,9 +68,10 @@ int test()
 
     for (int i=0; i<10; i++)
     {
-        QVector<double> series = Random::randomSeries(10000, RDT_lnorm, -0.09, 0.42);
-        Statistics lognorm(series);
-        qDebug()<<lognorm.calcMeanNormal()<<lognorm.calcMeanLognormal()<<lognorm.calcStdLognormal();
+        QVector<double> series = Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42);
+        Statistics lognorm(series, RDT_lnorm);
+        lognorm.calcConfidenceInterval(CI_95);
+        qDebug()<<lognorm.calcMeanNormal()<<lognorm.calcMeanLognormal()<<lognorm.calcStdLognormal()<<lognorm.getLowerConfidenceLevel()<<lognorm.getUpperConfidenceLevel();
     }
 
     return 0;

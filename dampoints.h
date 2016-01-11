@@ -31,7 +31,7 @@ public:
 private:
     OGRSFDriver *m_pDriverShp;
 
-    double m_modCap;
+    double m_modCap, m_meanDamHeight, m_confHi, m_confLo;
     const char *m_outDir, *m_layerName, *m_demPath;
 };
 
