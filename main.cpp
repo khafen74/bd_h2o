@@ -61,18 +61,18 @@ int test()
     const char *shpOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
     const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
 
-//    qDebug()<<"starting dam points";
-//    DamPoints modeledDams(demIn, shpIn, shpOut, 1.0);
-//    DamPolygons maxPondExtents(modeledDams, 3.5);
-//    qDebug()<<"done with dam points";
+    qDebug()<<"starting dam points";
+    DamPoints modeledDams(demIn, shpIn, shpOut, 1.0);
+    DamPolygons maxPondExtents(modeledDams);
+    qDebug()<<"done with dam points";
 
-    for (int i=0; i<10; i++)
-    {
-        QVector<double> series = Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42);
-        Statistics lognorm(series, RDT_lnorm);
-        lognorm.calcConfidenceInterval(CI_95);
-        qDebug()<<lognorm.calcMeanNormal()<<lognorm.calcMeanLognormal()<<lognorm.calcStdLognormal()<<lognorm.getLowerConfidenceLevel()<<lognorm.getUpperConfidenceLevel();
-    }
+//    for (int i=0; i<1; i++)
+//    {
+//        QVector<double> series = Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42);
+//        Statistics lognorm(series, RDT_lnorm);
+//        lognorm.calcCredibleInterval(CI_95);
+//        qDebug()<<lognorm.getLowerConfidenceLevel()<<lognorm.getQuantile(0.5)<<lognorm.getUpperConfidenceLevel();
+//    }
 
     return 0;
 }

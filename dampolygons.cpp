@@ -1,8 +1,7 @@
 #include "dampolygons.h"
 
-DamPolygons::DamPolygons(DamPoints pts, double maxDamHt)
+DamPolygons::DamPolygons(DamPoints pts)
 {
-    setMaxDamHeight(maxDamHt);
     init(pts);
 }
 
@@ -48,7 +47,7 @@ void DamPolygons::createFields(OGRLayer *pLayer)
 void DamPolygons::createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys)
 {
     double xCoords[5], yCoords[5];
-    double azimuthCurrent, azimuthStart, distance, slope;
+    double azimuthCurrent, azimuthStart, distance, slope, maxHeight;
     int nDams = pPts->GetFeatureCount();
 
     for (int i=0; i<nDams; i++)
@@ -62,7 +61,8 @@ void DamPolygons::createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys)
         pDamFeature = pPts->GetFeature(i);
         azimuthStart = pDamFeature->GetFieldAsDouble("az_us");
         slope = pDamFeature->GetFieldAsDouble("slope");
-        distance = getUpstreamDistance(m_maxDamHt/slope);
+        maxHeight = pDamFeature->GetFieldAsDouble("ht_max");
+        distance = getUpstreamDistance(maxHeight/slope);
         damPoint = (OGRPoint*) pDamFeature->GetGeometryRef();
 
         for (int j=0; j<5; j++)
@@ -107,11 +107,6 @@ void DamPolygons::setFieldValues(OGRFeature *pFeat, int bratID, int pondID, doub
     pFeat->SetField("brat_ID", bratID);
     pFeat->SetField("pond_ID", pondID);
     pFeat->SetField("WSE_max", maxWSE);
-}
-
-void DamPolygons::setMaxDamHeight(double maxDamHt)
-{
-    m_maxDamHt = maxDamHt;
 }
 
 void DamPolygons::setMaxDistance(double distance)

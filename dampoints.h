@@ -5,7 +5,7 @@
 #include "ogr_core.h"
 #include "ogr_api.h"
 #include "geometry.h"
-#include "random.h"
+#include "statistics.h"
 #include "raster.h"
 
 class DamPoints
@@ -25,7 +25,8 @@ public:
     void loadDriver();
     void setBratCapacity(double capacity);
     void setDemPath(const char *demPath);
-    void setFieldValues(OGRFeature *pFeat, int bratID, double damElev, double groundElev, double slope, double azimuth, double ptX, double ptY);
+    void setDamHeights(OGRFeature *pFeat, double low, double mid, double high, double max);
+    void setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY);
     void setOutDir(const char *outDirPath);
 
 private:

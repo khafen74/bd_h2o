@@ -43,7 +43,6 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
     double sampleDist = 50.0;
-    double heigthSum = 0.0;
     int nDams = 0;
 
     OGRFeature *pBratFeat;
@@ -54,7 +53,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
     for (int i=0; i<nFeatures; i++)
     {
         int nDamCount = 0;
-        double length, damDens, slope, spacing, damHeight, damElev, elev, azimuthStart, dist, endx, endy, end_elev;
+        double length, damDens, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
         OGRPoint point1, point2;
         pBratFeat = pBratLyr->GetFeature(i);;
         OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
@@ -82,27 +81,23 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
         }
         azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
         end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
-        dist = (damHeight/slope) * 1.0;
-        if (dist > spacing)
-        {
-            dist = spacing;
-        }
         nDams += nDamCount;
 
         for (int j=0; j<nDamCount; j++)
         {
             OGRPoint damPoint;
             double pointDist = length - (spacing * (j * 1.0));
-            damHeight = Random::random_lognormal(-0.0999, 0.42);
-            heigthSum += damHeight;
+            Statistics lognormal(Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42), RDT_lnorm);
+            lognormal.calcCredibleInterval(CI_95);
             pBratLine->Value(pointDist, &damPoint);
             double x = damPoint.getX();
             double y = damPoint.getY();
             elev = raster_dem.sampleAlongLine_LowVal(m_demPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
             damPoint.setX(x);
             damPoint.setY(y);
-            damElev = elev + damHeight;
-            setFieldValues(pDamFeat, i, damElev, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
+            setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
+            setDamHeights(pDamFeat, lognormal.getLowerConfidenceLevel(), lognormal.getQuantile(0.5), lognormal.getUpperConfidenceLevel(), VectorOps::max(lognormal.getData()));
+
             pDamFeat->SetGeometry(&damPoint);
             pDamsLyr->CreateFeature(pDamFeat);
         }
@@ -132,10 +127,22 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetName("slope");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
-    field.SetName("area_low");
+    field.SetName("ht_max");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
-    field.SetName("area_mean");
+    field.SetName("ht_lo");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("ht_mid");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("ht_hi");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("area_lo");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("area_mid");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("area_hi");
@@ -144,7 +151,7 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetName("vol_low");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
-    field.SetName("vol_mean");
+    field.SetName("vol_mid");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("vol_hi");
@@ -185,10 +192,17 @@ void DamPoints::setDemPath(const char *demPath)
     m_demPath = demPath;
 }
 
-void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double damElev, double groundElev, double slope, double azimuth, double ptX, double ptY)
+void DamPoints::setDamHeights(OGRFeature *pFeat, double low, double mid, double high, double max)
+{
+    pFeat->SetField("ht_lo", low);
+    pFeat->SetField("ht_mid", mid);
+    pFeat->SetField("ht_hi", high);
+    pFeat->SetField("ht_max", max);
+}
+
+void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY)
 {
     pFeat->SetField("brat_ID", bratID);
-    pFeat->SetField("d_elev", damElev);
     pFeat->SetField("g_elev", groundElev);
     pFeat->SetField("slope", slope);
     pFeat->SetField("az_us", azimuth);

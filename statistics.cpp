@@ -2,7 +2,8 @@
 
 Statistics::Statistics(QVector<double> sample, DIST_TYPE distr)
 {
-    setSample(sample);
+    setSample(sample);  
+    qSort(m_qvSample.begin(), m_qvSample.end());
     setDistributionType(distr);
     calcMu();
     calcSigma();
@@ -25,6 +26,22 @@ void Statistics::calcConfidenceInterval(ConfInt ci)
             upper = m_mu+(m_sigma/2)+(1.96*sqrt((m_sigma/m_qvSample.length())+(pow(m_sigma, 2)/(2*(m_qvSample.length()-1)))));
             m_ciLo = exp(m_mu - (m_z*m_sigma));
             m_ciHi = exp(m_mu + (m_z*m_sigma));
+    }
+}
+
+void Statistics::calcCredibleInterval(ConfInt ci)
+{
+    double oneSide;
+    oneSide = (1.0-getCIDecimal(ci))/2.0;
+
+    switch(m_distr)
+    {
+        case RDT_norm:
+            break;
+        case RDT_lnorm:
+            m_ciLo = getQuantile(oneSide);
+            m_ciHi = getQuantile(1-oneSide);
+        break;
     }
 }
 
@@ -94,6 +111,11 @@ double Statistics::calcStdNormal()
 
 }
 
+QVector<double> Statistics::getData()
+{
+    return m_qvSample;
+}
+
 double Statistics::getLowerConfidenceLevel()
 {
     return m_ciLo;
@@ -102,6 +124,12 @@ double Statistics::getLowerConfidenceLevel()
 double Statistics::getStdError()
 {
     return m_se;
+}
+
+double Statistics::getQuantile(double quantile)
+{
+    int index = round(quantile*m_qvSample.length());
+    return m_qvSample[index];
 }
 
 double Statistics::getUpperConfidenceLevel()
@@ -145,12 +173,28 @@ double Statistics::getZScore(ConfInt ci)
 
     switch (ci)
     {
-        case CI_99: zval = 2.58;
-        case CI_95: zval = 1.96;
-        case CI_90: zval = 1.645;
-        case CI_80: zval = 1.28;
-        case CI_70: zval = 1.04;
+        case CI_99: zval = 2.58; break;
+        case CI_95: zval = 1.96; break;
+        case CI_90: zval = 1.645; break;
+        case CI_80: zval = 1.28; break;
+        case CI_70: zval = 1.04; break;
     }
 
     return zval;
+}
+
+double Statistics::getCIDecimal(ConfInt ci)
+{
+    double val = 0.0;
+
+    switch (ci)
+    {
+        case CI_99: val = 0.99; break;
+        case CI_95: val = 0.95; break;
+        case CI_90: val = 0.90; break;
+        case CI_80: val = 0.80; break;
+        case CI_70: val = 0.70; break;
+    }
+
+    return val;
 }

@@ -23,7 +23,8 @@ SOURCES += main.cpp \
     storagemodel.cpp \
     dampoints.cpp \
     bratlines.cpp \
-    dampolygons.cpp
+    dampolygons.cpp \
+    vectorops.cpp
 
 win32: LIBS += -L$$PWD/../../../../../../../MinGW/msys/1.0/local/lib/ -llibgdal
 
@@ -38,4 +39,5 @@ HEADERS += \
     storagemodel.h \
     dampoints.h \
     bratlines.h \
-    dampolygons.h
+    dampolygons.h \
+    vectorops.h
