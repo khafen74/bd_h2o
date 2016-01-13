@@ -30,7 +30,8 @@ private:
     GDALDriver *m_pDriverTiff;
 
     double m_maxDist;
-    const char *m_outDir, *m_demPath, *m_layerName, *m_rasLoPath, *m_rasMidPath, *m_rasHiPath;
+    const char *m_outDir, *m_demPath, *m_layerName;
+    QString m_qsMid, m_qsLo, m_qsHi;
 };
 
 #endif // DAMPOLYGONS_H
