@@ -13,6 +13,8 @@ public:
     void init(DamPoints pondPts);
 
     void loadDriver();
+    void loadDriver_GDAL();
+    void createDepthRasters();
     void createFields(OGRLayer *pLayer);
     void createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys);
     double getUpstreamDistance(double dist);
@@ -21,12 +23,14 @@ public:
     void setMaxDamHeight(double maxDamHt);
     void setMaxDistance(double distance);
     void setOutDirPath(const char *outDir);
+    void setRasterPaths();
 
 private:
     OGRSFDriver *m_pDriverShp;
+    GDALDriver *m_pDriverTiff;
 
     double m_maxDist;
-    const char *m_outDir, *m_demPath, *m_layerName;
+    const char *m_outDir, *m_demPath, *m_layerName, *m_rasLoPath, *m_rasMidPath, *m_rasHiPath;
 };
 
 #endif // DAMPOLYGONS_H
