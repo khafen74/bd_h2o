@@ -14,12 +14,13 @@ public:
 
     void loadDriver();
     void loadDriver_GDAL();
+    void calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys);
     void createDepthRasters();
     void createFields(OGRLayer *pLayer);
     void createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys);
     double getUpstreamDistance(double dist);
     void setDemPath(const char *demPath);
-    void setFieldValues(OGRFeature *pFeat, int bratID, int pondID, double maxWSE);
+    void setFieldValues(OGRFeature *pFeat, int bratID, int pondID);
     void setMaxDamHeight(double maxDamHt);
     void setMaxDistance(double distance);
     void setOutDirPath(const char *outDir);
@@ -29,7 +30,7 @@ private:
     OGRSFDriver *m_pDriverShp;
     GDALDriver *m_pDriverTiff;
 
-    double m_maxDist;
+    double m_maxDist, m_cellWidth, m_cellHeight;
     const char *m_outDir, *m_demPath, *m_layerName;
     QString m_qsMid, m_qsLo, m_qsHi;
 };

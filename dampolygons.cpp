@@ -21,7 +21,7 @@ void DamPolygons::init(DamPoints pondPts)
     pPoly_lyr = pOutDs->CreateLayer(m_layerName, pPts_lyr->GetSpatialRef(), wkbPolygon, NULL);
 
     createPondPolygons(pPts_lyr, pPoly_lyr);
-    createDepthRasters();
+    calculateWaterDepth(pPts_lyr, pPoly_lyr);
 
     OGRDataSource::DestroyDataSource(pOutDs);
 }
@@ -39,6 +39,104 @@ void DamPolygons::loadDriver_GDAL()
     m_pDriverTiff = GetGDALDriverManager()->GetDriverByName("GTiff");
 }
 
+void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
+{
+    createDepthRasters();
+    OGRPolygon *pPolygon;
+    OGRLinearRing *pRing;
+    OGREnvelope bound;
+    Raster rasDem, rasLo, rasMid, rasHi;
+    rasDem.setProperties(m_demPath);
+    rasLo.setProperties(m_qsLo.toStdString().c_str());
+    rasMid.setProperties(m_qsMid.toStdString().c_str());
+    rasHi.setProperties(m_qsHi.toStdString().c_str());
+    int nPonds = pPolys->GetFeatureCount();
+    int pondID;
+    double lo, mid, hi, gelev, demVal, depValNew;
+    double lowVol, midVol, hiVol, lowArea, midArea, hiArea;
+    int lowCount, midCount, hiCount;
+    for (int i=0; i<nPonds; i++)
+    {
+        OGRFeature *pDamFeat, *pPolyFeat;
+        pPolyFeat = pPolys->GetFeature(i);
+        pPolygon = (OGRPolygon*) pPolyFeat->GetGeometryRef();
+        pRing = pPolygon->getExteriorRing();
+        pRing->getEnvelope(&bound);
+        pondID = pPolyFeat->GetFieldAsInteger("pond_ID");
+        pDamFeat = pPts->GetFeature(pondID);
+        qDebug()<<pondID;
+        gelev = pDamFeat->GetFieldAsDouble("g_elev");
+        lo = gelev + pDamFeat->GetFieldAsDouble("ht_lo");
+        mid = gelev + pDamFeat->GetFieldAsDouble("ht_mid");
+        hi = gelev + pDamFeat->GetFieldAsDouble("ht_hi");
+        int left = rasDem.getCol(bound.MinX)-1;
+        int right = rasDem.getCol(bound.MaxX)+1;;
+        int top = rasDem.getRow(bound.MaxY)-1;
+        int bottom = rasDem.getRow(bound.MinY)+1;
+        lowVol = 0.0, midVol = 0.0, hiVol = 0.0;
+        lowCount = 0, midCount = 0, hiCount = 0;
+
+        for (int j=top; j<bottom; j++)
+        {
+            for (int k=left; k<right; k++)
+            {
+                double x = rasDem.xCoordinate(k);
+                double y = rasDem.yCoordinate(j);
+                //int r = rasDem.getRow(y)
+                //qDebug()<<QString::number(x, 'f', 2)<<QString::number(y, 'f', 2);
+
+                if (Geometry::pointInPolygon(pRing, x, y))
+                {
+                    //qDebug()<<"true";
+                    demVal = rasDem.valueAtPoint(x,y);
+                    if (demVal < lo)
+                    {
+                        depValNew = lo - demVal;
+                        if (depValNew > rasLo.valueAtPoint(x,y) && depValNew > 0.0)
+                        {
+                            rasLo.writeCellValue(x, y, depValNew);
+                            lowCount++;
+                            lowVol += depValNew;
+                        }
+
+                    }
+                    if (demVal < mid)
+                    {
+                        depValNew = mid - demVal;
+                        if (depValNew > rasMid.valueAtPoint(x,y) && depValNew > 0.0)
+                        {
+                            rasMid.writeCellValue(x, y, depValNew);
+                            midVol++;
+                            midCount += depValNew;
+                        }
+                    }
+                    if (demVal < hi)
+                    {
+                        depValNew = hi - demVal;
+                        if (depValNew > rasHi.valueAtPoint(x,y) && depValNew > 0.0)
+                        {
+                            rasHi.writeCellValue(x, y, depValNew);
+                            hiCount++;
+                            hiVol += depValNew;
+                        }
+                    }
+                }
+            }
+        }
+
+        pDamFeat->SetField("area_lo", lowCount*m_cellWidth*m_cellHeight);
+        pDamFeat->SetField("area_mid", midCount*m_cellWidth*m_cellHeight);
+        pDamFeat->SetField("area_hi", hiCount*m_cellWidth*m_cellHeight);
+        pDamFeat->SetField("vol_low", lowVol*m_cellWidth*m_cellHeight);
+        pDamFeat->SetField("vol_mid", midVol*m_cellWidth*m_cellHeight);
+        pDamFeat->SetField("vol_hi", hiVol*m_cellWidth*m_cellHeight);
+
+        pPts->SetFeature(pDamFeat);
+        OGRFeature::DestroyFeature(pDamFeat);
+        OGRFeature::DestroyFeature(pPolyFeat);
+    }
+}
+
 void DamPolygons::createDepthRasters()
 {
     setRasterPaths();
@@ -48,6 +146,9 @@ void DamPolygons::createDepthRasters()
 
     pDemDS = (GDALDataset*) GDALOpen(m_demPath, GA_ReadOnly);
     pDemDS->GetGeoTransform(geot);
+
+    m_cellWidth = geot[1];
+    m_cellHeight = fabs(geot[5]);
 
     pLoDS = m_pDriverTiff->Create(m_qsLo.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
     pLoDS->SetGeoTransform(geot);
@@ -77,9 +178,6 @@ void DamPolygons::createFields(OGRLayer *pLayer)
     field.SetName("pond_ID");
     field.SetType(OFTInteger);
     pLayer->CreateField(&field);
-    field.SetName("WSE_max");
-    field.SetType(OFTReal);
-    pLayer->CreateField(&field);
 }
 
 void DamPolygons::createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys)
@@ -87,6 +185,7 @@ void DamPolygons::createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys)
     double xCoords[5], yCoords[5];
     double azimuthCurrent, azimuthStart, distance, slope, maxHeight;
     int nDams = pPts->GetFeatureCount();
+    createFields(pPolys);
 
     for (int i=0; i<nDams; i++)
     {
@@ -97,6 +196,7 @@ void DamPolygons::createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys)
         OGRFeature *pPolyFeature = OGRFeature::CreateFeature(pPolys->GetLayerDefn());
 
         pDamFeature = pPts->GetFeature(i);
+        setFieldValues(pPolyFeature, pDamFeature->GetFieldAsInteger("brat_ID"), i);
         azimuthStart = pDamFeature->GetFieldAsDouble("az_us");
         slope = pDamFeature->GetFieldAsDouble("slope");
         maxHeight = pDamFeature->GetFieldAsDouble("ht_max");
@@ -140,11 +240,10 @@ void DamPolygons::setDemPath(const char *demPath)
     m_demPath = demPath;
 }
 
-void DamPolygons::setFieldValues(OGRFeature *pFeat, int bratID, int pondID, double maxWSE)
+void DamPolygons::setFieldValues(OGRFeature *pFeat, int bratID, int pondID)
 {
     pFeat->SetField("brat_ID", bratID);
     pFeat->SetField("pond_ID", pondID);
-    pFeat->SetField("WSE_max", maxWSE);
 }
 
 void DamPolygons::setMaxDistance(double distance)

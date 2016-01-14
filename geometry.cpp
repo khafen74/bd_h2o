@@ -31,15 +31,16 @@ double Geometry::angleBetweenLines(double x1, double y1, double x2, double y2, d
 
     angle = atan2(y1-y3, x1-x3) - atan2(y2-y3, x2-x3);
 
-    while (angle < -PI)
+    while (angle < (-1.0*PI))
     {
-        angle += 2*PI;
+        angle += 2.0*PI;
     }
     while (angle > PI)
     {
-        angle -= 2*PI;
+        angle -= 2.0*PI;
     }
 
+    //qDebug()<<angle;
     return angle;
 }
 
@@ -112,5 +113,25 @@ int Geometry::calcCoords(double startX, double startY, double azimuth, double di
     newY = startY + deltaY;
 
     return 0;
+}
+
+bool Geometry::pointInPolygon(OGRLinearRing *pRing, double x, double y)
+{
+    double angle = 0.0;
+
+    for (int i=0; i<pRing->getNumPoints()-1; i++)
+    {
+        angle += angleBetweenLines(pRing->getX(i), pRing->getY(i), pRing->getX(i+1), pRing->getY(i+1), x, y);
+    }
+    //qDebug()<<angle;
+
+    if (angle > PI)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 

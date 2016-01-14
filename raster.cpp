@@ -9,7 +9,7 @@ void Raster::add(const char *addPath)
 {
     GDALDataset *pSourceDS, *pAddDS;
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath, GA_Update);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
     pAddDS = (GDALDataset*) GDALOpen(addPath, GA_ReadOnly);
 
     float *srcRow = (float*) CPLMalloc(sizeof(float)*nCols);
@@ -58,7 +58,7 @@ double Raster::area()
 {
     GDALDataset *pRaster;
 
-    pRaster  = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pRaster  = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
 
     float *value = (float*) CPLMalloc(sizeof(float)*nCols);
 
@@ -95,7 +95,7 @@ void Raster::aspect(const char *aspectPath)
 {
     GDALDataset *pSourceDS, *pAspectDS;
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
 
     pAspectDS = pDriverTiff->Create(aspectPath, nCols, nRows, 1, GDT_Float32, NULL);
     pAspectDS->SetGeoTransform(transform);
@@ -190,7 +190,7 @@ void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygo
     OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
     pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
 
-    GDALDataset *pRaster = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    GDALDataset *pRaster = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     double geot[6];
     pRaster->GetGeoTransform(geot);
 
@@ -270,7 +270,7 @@ void Raster::filterLowPass(const char *filterRaster)
 {
     GDALDataset *pSource, *pFilter;
 
-    pSource = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pSource = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pFilter = pDriverTiff->Create(filterRaster, nCols, nRows, 1, GDT_Float32, NULL);
 
     pFilter->SetGeoTransform(transform);
@@ -458,7 +458,7 @@ int Raster::getCols()
 
 const char *Raster::getPath()
 {
-    return m_rasterPath;
+    return m_rasterPath.toStdString().c_str();
 }
 
 double Raster::getRow(double yCoord)
@@ -483,7 +483,7 @@ void Raster::greaterThan(const char *outPath, double value)
 {
     GDALDataset *pSourceDS, *pGreaterDS;
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pGreaterDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pGreaterDS->SetGeoTransform(transform);
     pGreaterDS->GetRasterBand(1)->SetNoDataValue(noData);
@@ -526,7 +526,7 @@ void Raster::hillshade(const char *hlsdPath)
 {
     GDALDataset *pSourceDS, *pHlsdDS;
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pHlsdDS = pDriverTiff->Create(hlsdPath, nCols, nRows, 1, GDT_Byte, NULL);
     pHlsdDS->SetGeoTransform(transform);
     pHlsdDS->GetRasterBand(1)->SetNoDataValue(0);
@@ -629,7 +629,7 @@ int Raster::regions(const char *regionsRaster)
 {
     GDALDataset *pInputRaster, *pRegionsRaster;
 
-    pInputRaster = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pInputRaster = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
 
     pRegionsRaster = pDriverTiff->CreateCopy(regionsRaster, pInputRaster, FALSE, NULL, NULL, NULL);
 
@@ -740,7 +740,7 @@ double Raster::sampleAlongLine_LowVal(double startX, double startY, double azimu
 
     //qDebug()<<"opening raster";
     GDALDataset *pRas;
-    pRas = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pRas = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pRas->GetGeoTransform(transform);
     GDALClose(pRas);
     //qDebug()<<"raster closed";
@@ -791,8 +791,8 @@ void Raster::setProperties(const char *rasterPath)
 {
     loadDrivers();
 
-    m_rasterPath = rasterPath;
-    GDALDataset *pRaster = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    m_rasterPath = QString::fromUtf8(rasterPath);
+    GDALDataset *pRaster = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
 
     nRows = pRaster->GetRasterBand(1)->GetYSize();
     nCols = pRaster->GetRasterBand(1)->GetXSize();
@@ -806,7 +806,7 @@ void Raster::slopeTOF(const char *slopePath)
 {
     GDALDataset *pSourceDS, *pSlopeDS;
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pSlopeDS = pDriverTiff->Create(slopePath, nCols, nRows, 1, GDT_Float32, NULL);
     pSlopeDS->SetGeoTransform(transform);
     pSlopeDS->GetRasterBand(1)->SetNoDataValue(noData);
@@ -865,7 +865,7 @@ void Raster::subtract(const char *subtractPath)
 
     loadDrivers();
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath, GA_Update);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
     pSubtractDS = (GDALDataset*) GDALOpen(subtractPath, GA_ReadOnly);
 
     float *srcRow = (float*) CPLMalloc(sizeof(float)*nCols);
@@ -916,7 +916,7 @@ void Raster::subtract(const char *sourcePath, const char *subtractPath, const ch
 
     GDALDataset *pSourceDS, *pSubtractDS, *pOutDS;
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath, GA_Update);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
     pSubtractDS = (GDALDataset*) GDALOpen(subtractPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outputPath, nCols, nRows, 1, GDT_Float32, NULL);
 
@@ -969,7 +969,7 @@ double Raster::sum()
 {
     GDALDataset *pRaster;
 
-    pRaster = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pRaster = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
 
     double dSum = 0.0;
 
@@ -1012,7 +1012,7 @@ double Raster::valueAtPoint(double xCoord, double yCoord)
     double value, xOffset, yOffset, xDiv, yDiv;
     int row, col;
 
-    pRaster = (GDALDataset*) GDALOpen(m_rasterPath, GA_ReadOnly);
+    pRaster = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
 
     pRaster->GetGeoTransform(transform);
 
@@ -1044,6 +1044,19 @@ double Raster::valueAtPoint(const char *rasterPath, double xCoord, double yCoord
     double value = valueAtPoint(xCoord, yCoord);
 
     return value;
+}
+
+void Raster::writeCellValue(double xCoord, double yCoord, double value)
+{
+    float *newVal = (float*) CPLMalloc(sizeof(float)*1);
+    *newVal = value;
+    int row = getRow(yCoord);
+    int col = getCol(xCoord);
+    GDALDataset *pRaster;
+    pRaster = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
+    pRaster->GetRasterBand(1)->RasterIO(GF_Write, col, row, 1, 1, newVal, 1, 1, GDT_Float32, 0, 0);
+    CPLFree(newVal);
+    GDALClose(pRaster);
 }
 
 double Raster::xCoordinate(int col)

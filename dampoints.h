@@ -27,6 +27,7 @@ public:
     void setDemPath(const char *demPath);
     void setDamHeights(OGRFeature *pFeat, double low, double mid, double high, double max);
     void setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY);
+    void setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol);
     void setOutDir(const char *outDirPath);
 
 private:
