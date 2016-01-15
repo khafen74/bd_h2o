@@ -68,8 +68,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
         lo = gelev + pDamFeat->GetFieldAsDouble("ht_lo");
         mid = gelev + pDamFeat->GetFieldAsDouble("ht_mid");
         hi = gelev + pDamFeat->GetFieldAsDouble("ht_hi");
-        qDebug()<<pondID;
-        qDebug()<<lo<<mid<<hi<<gelev;
+        qDebug()<<pondID<<" of "<<nPonds;
         int left = rasDem.getCol(bound.MinX)-1;
         int right = rasDem.getCol(bound.MaxX)+1;;
         int top = rasDem.getRow(bound.MaxY)-1;
@@ -125,12 +124,8 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
             }
         }
 
-        pDamFeat->SetField("area_lo", lowCount*m_cellWidth*m_cellHeight);
-        pDamFeat->SetField("area_mid", midCount*m_cellWidth*m_cellHeight);
-        pDamFeat->SetField("area_hi", hiCount*m_cellWidth*m_cellHeight);
-        pDamFeat->SetField("vol_low", lowVol*m_cellWidth*m_cellHeight);
-        pDamFeat->SetField("vol_mid", midVol*m_cellWidth*m_cellHeight);
-        pDamFeat->SetField("vol_hi", hiVol*m_cellWidth*m_cellHeight);
+        DamPoints::setPondAttributes(pDamFeat, lowCount*m_cellWidth*m_cellHeight, midCount*m_cellWidth*m_cellHeight, hiCount*m_cellWidth*m_cellHeight,
+                                     lowVol*m_cellWidth*m_cellHeight, midVol*m_cellWidth*m_cellHeight, hiVol*m_cellWidth*m_cellHeight);
 
         pPts->SetFeature(pDamFeat);
         OGRFeature::DestroyFeature(pDamFeat);

@@ -151,7 +151,7 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetName("area_hi");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
-    field.SetName("vol_low");
+    field.SetName("vol_lo");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("vol_mid");
@@ -213,6 +213,11 @@ void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double groundElev,
     pFeat->SetField("endy", ptY);
 }
 
+void DamPoints::setOutDir(const char *outDirPath)
+{
+    m_outDir = outDirPath;
+}
+
 void DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol)
 {
     pFeat->SetField("area_lo", lowarea);
@@ -221,10 +226,5 @@ void DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
     pFeat->SetField("vol_lo", lowvol);
     pFeat->SetField("vol_mid", midvol);
     pFeat->SetField("vol_hi", hivol);
-}
-
-void DamPoints::setOutDir(const char *outDirPath)
-{
-    m_outDir = outDirPath;
 }
 
