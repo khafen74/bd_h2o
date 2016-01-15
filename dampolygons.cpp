@@ -64,11 +64,12 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
         pRing->getEnvelope(&bound);
         pondID = pPolyFeat->GetFieldAsInteger("pond_ID");
         pDamFeat = pPts->GetFeature(pondID);
-        qDebug()<<pondID;
         gelev = pDamFeat->GetFieldAsDouble("g_elev");
         lo = gelev + pDamFeat->GetFieldAsDouble("ht_lo");
         mid = gelev + pDamFeat->GetFieldAsDouble("ht_mid");
         hi = gelev + pDamFeat->GetFieldAsDouble("ht_hi");
+        qDebug()<<pondID;
+        qDebug()<<lo<<mid<<hi<<gelev;
         int left = rasDem.getCol(bound.MinX)-1;
         int right = rasDem.getCol(bound.MaxX)+1;;
         int top = rasDem.getRow(bound.MaxY)-1;
@@ -106,8 +107,8 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
                         if (depValNew > rasMid.valueAtPoint(x,y) && depValNew > 0.0)
                         {
                             rasMid.writeCellValue(x, y, depValNew);
-                            midVol++;
-                            midCount += depValNew;
+                            midCount++;
+                            midVol += depValNew;
                         }
                     }
                     if (demVal < hi)

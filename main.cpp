@@ -59,10 +59,11 @@ int test()
 {
     const char *shpIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/01_shpIn/BRAT_TempleFk_WS.shp";
     const char *shpOut = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut";
-    const char *demIn = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+    const char *demIn10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
+    const char *demIn1m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
 
     qDebug()<<"starting dam points";
-    DamPoints modeledDams(demIn, shpIn, shpOut, 1.0);
+    DamPoints modeledDams(demIn10m, shpIn, shpOut, 1.0);
     DamPolygons maxPondExtents(modeledDams);
     qDebug()<<"done with dam points";
 

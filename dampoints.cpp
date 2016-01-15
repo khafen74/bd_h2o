@@ -99,7 +99,10 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             setDamHeights(pDamFeat, lognormal.getLowerConfidenceLevel(), lognormal.getQuantile(0.5), lognormal.getUpperConfidenceLevel(), VectorOps::max(lognormal.getData()));
 
             pDamFeat->SetGeometry(&damPoint);
-            pDamsLyr->CreateFeature(pDamFeat);
+            if (elev > 0.0)
+            {
+                pDamsLyr->CreateFeature(pDamFeat);
+            }
         }
     }
     OGRFeature::DestroyFeature(pDamFeat);
