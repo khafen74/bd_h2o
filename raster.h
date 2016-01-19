@@ -57,6 +57,7 @@ public:
     double valueAtPoint(double xCoord, double yCoord);
     double valueAtPoint(const char *rasterPath, double xCoord, double yCoord);
     void writeCellValue(double xCoord, double yCoord, double value);
+    void writeCellValue(const char *rasterPath, double xCoord, double yCoord, double value);
     double xCoordinate(int col);
     double yCoordinate(int row);
     void zeroToNoData(const char *sourcePath, double noDataValue);

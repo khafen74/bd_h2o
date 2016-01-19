@@ -25,6 +25,7 @@ public:
     void setMaxDistance(double distance);
     void setOutDirPath(const char *outDir);
     void setRasterPaths();
+    void summarizePondDepths(OGRLayer *pPts);
 
 private:
     OGRSFDriver *m_pDriverShp;
@@ -32,7 +33,9 @@ private:
 
     double m_maxDist, m_cellWidth, m_cellHeight;
     const char *m_outDir, *m_demPath, *m_layerName;
-    QString m_qsMid, m_qsLo, m_qsHi;
+    QString m_qsMid, m_qsLo, m_qsHi,
+            m_qsMidReach, m_qsLoReach, m_qsHiReach,
+            m_qsMidPond, m_qsLoPond, m_qsHiPond;
 };
 
 #endif // DAMPOLYGONS_H

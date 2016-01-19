@@ -45,16 +45,21 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
     OGRPolygon *pPolygon;
     OGRLinearRing *pRing;
     OGREnvelope bound;
-    Raster rasDem, rasLo, rasMid, rasHi;
+    Raster rasDem, rasLo, rasMid, rasHi, loPond, midPond, hiPond, loReach, midReach, hiReach;
     rasDem.setProperties(m_demPath);
     rasLo.setProperties(m_qsLo.toStdString().c_str());
     rasMid.setProperties(m_qsMid.toStdString().c_str());
     rasHi.setProperties(m_qsHi.toStdString().c_str());
+    rasLo.setProperties(m_qsLoPond.toStdString().c_str());
+    rasMid.setProperties(m_qsMidPond.toStdString().c_str());
+    rasHi.setProperties(m_qsHiPond.toStdString().c_str());
+    rasLo.setProperties(m_qsLoReach.toStdString().c_str());
+    rasMid.setProperties(m_qsMidReach.toStdString().c_str());
+    rasHi.setProperties(m_qsHiReach.toStdString().c_str());
     int nPonds = pPolys->GetFeatureCount();
     int pondID;
     double lo, mid, hi, gelev, demVal, depValNew;
-    double lowVol, midVol, hiVol, lowArea, midArea, hiArea;
-    int lowCount, midCount, hiCount;
+
     for (int i=0; i<nPonds; i++)
     {
         OGRFeature *pDamFeat, *pPolyFeat;
@@ -73,8 +78,6 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
         int right = rasDem.getCol(bound.MaxX)+1;;
         int top = rasDem.getRow(bound.MaxY)-1;
         int bottom = rasDem.getRow(bound.MinY)+1;
-        lowVol = 0.0, midVol = 0.0, hiVol = 0.0;
-        lowCount = 0, midCount = 0, hiCount = 0;
 
         for (int j=top; j<bottom; j++)
         {
@@ -82,12 +85,9 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
             {
                 double x = rasDem.xCoordinate(k);
                 double y = rasDem.yCoordinate(j);
-                //int r = rasDem.getRow(y)
-                //qDebug()<<QString::number(x, 'f', 2)<<QString::number(y, 'f', 2);
 
                 if (Geometry::pointInPolygon(pRing, x, y))
                 {
-                    //qDebug()<<"true";
                     demVal = rasDem.valueAtPoint(x,y);
                     if (demVal < lo)
                     {
@@ -95,8 +95,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
                         if (depValNew > rasLo.valueAtPoint(x,y) && depValNew > 0.0)
                         {
                             rasLo.writeCellValue(x, y, depValNew);
-                            lowCount++;
-                            lowVol += depValNew;
+                            loPond.writeCellValue(m_qsLoReach.toStdString().c_str(), x, y, pondID*1.0);
                         }
 
                     }
@@ -106,8 +105,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
                         if (depValNew > rasMid.valueAtPoint(x,y) && depValNew > 0.0)
                         {
                             rasMid.writeCellValue(x, y, depValNew);
-                            midCount++;
-                            midVol += depValNew;
+                            midPond.writeCellValue(m_qsMidPond.toStdString().c_str(), x, y, pondID*1.0);
                         }
                     }
                     if (demVal < hi)
@@ -116,18 +114,13 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
                         if (depValNew > rasHi.valueAtPoint(x,y) && depValNew > 0.0)
                         {
                             rasHi.writeCellValue(x, y, depValNew);
-                            hiCount++;
-                            hiVol += depValNew;
+                            hiPond.writeCellValue(m_qsHiPond.toStdString().c_str(), x, y, pondID*1.0);
                         }
                     }
                 }
             }
         }
 
-        DamPoints::setPondAttributes(pDamFeat, lowCount*m_cellWidth*m_cellHeight, midCount*m_cellWidth*m_cellHeight, hiCount*m_cellWidth*m_cellHeight,
-                                     lowVol*m_cellWidth*m_cellHeight, midVol*m_cellWidth*m_cellHeight, hiVol*m_cellWidth*m_cellHeight);
-
-        pPts->SetFeature(pDamFeat);
         OGRFeature::DestroyFeature(pDamFeat);
         OGRFeature::DestroyFeature(pPolyFeat);
     }
@@ -159,6 +152,42 @@ void DamPolygons::createDepthRasters()
     GDALClose(pMidDS);
 
     pHiDS = m_pDriverTiff->Create(m_qsHi.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pHiDS->SetGeoTransform(geot);
+    pHiDS->GetRasterBand(1)->Fill(-9999.0);
+    pHiDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    GDALClose(pHiDS);
+
+    pLoDS = m_pDriverTiff->Create(m_qsLoReach.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pLoDS->SetGeoTransform(geot);
+    pLoDS->GetRasterBand(1)->Fill(-9999.0);
+    pLoDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    GDALClose(pLoDS);
+
+    pMidDS = m_pDriverTiff->Create(m_qsMidReach.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pMidDS->SetGeoTransform(geot);
+    pMidDS->GetRasterBand(1)->Fill(-9999.0);
+    pMidDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    GDALClose(pMidDS);
+
+    pHiDS = m_pDriverTiff->Create(m_qsHiReach.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pHiDS->SetGeoTransform(geot);
+    pHiDS->GetRasterBand(1)->Fill(-9999.0);
+    pHiDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    GDALClose(pHiDS);
+
+    pLoDS = m_pDriverTiff->Create(m_qsLoPond.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pLoDS->SetGeoTransform(geot);
+    pLoDS->GetRasterBand(1)->Fill(-9999.0);
+    pLoDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    GDALClose(pLoDS);
+
+    pMidDS = m_pDriverTiff->Create(m_qsMidPond.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pMidDS->SetGeoTransform(geot);
+    pMidDS->GetRasterBand(1)->Fill(-9999.0);
+    pMidDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    GDALClose(pMidDS);
+
+    pHiDS = m_pDriverTiff->Create(m_qsHiPond.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
     pHiDS->SetGeoTransform(geot);
     pHiDS->GetRasterBand(1)->Fill(-9999.0);
     pHiDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
@@ -258,5 +287,53 @@ void DamPolygons::setRasterPaths()
     m_qsLo = dirPath + "/depLo.tif";
     m_qsMid = dirPath + "/depMid.tif";
     m_qsHi = dirPath + "/depHi.tif";
+    m_qsLoReach = dirPath + "/depLoReach.tif";
+    m_qsMidReach = dirPath + "/depMidReach.tif";
+    m_qsHiReach = dirPath + "/depHiReach.tif";
+    m_qsLoPond = dirPath + "/depLoPond.tif";
+    m_qsMidPond = dirPath + "/depMidPond.tif";
+    m_qsHiPond = dirPath + "/depHiPond.tif";
+}
+
+void DamPolygons::summarizePondDepths(OGRLayer *pPts)
+{
+    int nDams = pPts->GetFeatureCount();
+    QVector<double> areasLo(nDams), areasMid(nDams), areasHi(nDams), volumesLo(nDams), volumesMid(nDams), volumesHi(nDams);
+    QVector<int> pondIDs(nDams), countsLo(nDams), countsMid(nDams), countsHi(nDams);
+
+    for (int i=0; i<nDams; i++)
+    {
+        OGRFeature *pDamFeature;
+        pDamFeature = pPts->GetFeature(i);
+        pondIDs[i] = pDamFeature->GetFID();
+        OGRFeature::DestroyFeature(pDamFeature);
+    }
+
+    loadDriver_GDAL();
+    GDALDataset *pLo, *pMid, *pHi;
+    pLo = (GDALDataset*) GDALOpen(m_qsLo.toStdString().c_str(), GA_ReadOnly);
+    pMid = (GDALDataset*) GDALOpen(m_qsMid.toStdString().c_str(), GA_ReadOnly);
+    pHi = (GDALDataset*) GDALOpen(m_qsHi.toStdString().c_str(), GA_ReadOnly);
+
+    float *loVals = (float*) CPLMalloc(sizeof(float) * pLo->GetRasterXSize());
+    float *midVals = (float*) CPLMalloc(sizeof(float) * pLo->GetRasterXSize());
+    float *hiVals = (float*) CPLMalloc(sizeof(float) * pLo->GetRasterXSize());
+
+    for (int i=0; i<pLo->GetRasterYSize(); i++)
+    {
+        for (int j=0; j<pLo->GetRasterXSize(); j++)
+        {
+
+        }
+    }
+
+    CPLFree(loVals);
+    CPLFree(midVals);
+    CPLFree(hiVals);
+
+    GDALClose(pLo);
+    GDALClose(pMid);
+    GDALClose(pHi);
+
 }
 

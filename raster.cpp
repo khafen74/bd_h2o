@@ -1059,6 +1059,12 @@ void Raster::writeCellValue(double xCoord, double yCoord, double value)
     GDALClose(pRaster);
 }
 
+void Raster::writeCellValue(const char *rasterPath, double xCoord, double yCoord, double value)
+{
+    setProperties(rasterPath);
+    writeCellValue(xCoord, yCoord, value);
+}
+
 double Raster::xCoordinate(int col)
 {
     double x;
