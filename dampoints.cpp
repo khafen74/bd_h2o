@@ -20,15 +20,15 @@ void DamPoints::init(const char *bratPath)
 
     QString qsBratDir, qsBratName;
     QFileInfo fi(QString::fromUtf8(bratPath));
-    qsBratDir = fi.absolutePath();
-    qsBratName = fi.baseName();
+    setBratPath(fi.absolutePath());
+    setBratName(fi.baseName());
 
     OGRDataSource *pInDs, *pOutDs;
     OGRLayer *pBratIn, *pDamsOut;
 
-    pInDs = m_pDriverShp->CreateDataSource(qsBratDir.toStdString().c_str(), NULL);
+    pInDs = m_pDriverShp->CreateDataSource(m_qsBratDir.toStdString().c_str(), NULL);
     pOutDs = m_pDriverShp->CreateDataSource(m_outDir, NULL);
-    pBratIn = pInDs->GetLayerByName(qsBratName.toStdString().c_str());
+    pBratIn = pInDs->GetLayerByName(m_qsBratName.toStdString().c_str());
     pDamsOut = pOutDs->CreateLayer(m_layerName, pBratIn->GetSpatialRef(), wkbPoint, NULL);
 
     createFields(pDamsOut);
@@ -162,6 +162,16 @@ void DamPoints::createFields(OGRLayer *pLayer)
     pLayer->CreateField(&field);
 }
 
+QString DamPoints::getBratDir()
+{
+    return m_qsBratDir;
+}
+
+QString DamPoints::getBratName()
+{
+    return m_qsBratName;
+}
+
 const char *DamPoints::getDemPath()
 {
     return m_demPath;
@@ -188,6 +198,16 @@ void DamPoints::loadDriver()
 void DamPoints::setBratCapacity(double capacity)
 {
     m_modCap = capacity;
+}
+
+void DamPoints::setBratPath(QString path)
+{
+    m_qsBratDir = path;
+}
+
+void DamPoints::setBratName(QString name)
+{
+    m_qsBratName = name;
 }
 
 void DamPoints::setDemPath(const char *demPath)

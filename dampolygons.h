@@ -17,6 +17,7 @@ public:
     void calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys);
     void createDepthRasters();
     void createFields(OGRLayer *pLayer);
+    void createFields_BRAT(OGRLayer *pLayer);
     void createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys);
     double getUpstreamDistance(double dist);
     void setDemPath(const char *demPath);
@@ -26,6 +27,7 @@ public:
     void setOutDirPath(const char *outDir);
     void setRasterPaths();
     void summarizePondDepths(OGRLayer *pPts);
+    void summarizeReachDepths(OGRLayer *pPts);
 
 private:
     OGRSFDriver *m_pDriverShp;
@@ -34,8 +36,8 @@ private:
     double m_maxDist, m_cellWidth, m_cellHeight;
     const char *m_outDir, *m_demPath, *m_layerName;
     QString m_qsMid, m_qsLo, m_qsHi,
-            m_qsMidReach, m_qsLoReach, m_qsHiReach,
-            m_qsMidPond, m_qsLoPond, m_qsHiPond;
+            m_qsMidPond, m_qsLoPond, m_qsHiPond,
+            m_qsBratDir, m_qsBratName;
 };
 
 #endif // DAMPOLYGONS_H
