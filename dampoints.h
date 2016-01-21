@@ -11,7 +11,6 @@
 class DamPoints
 {
 public:
-    DamPoints(const char *pointsPath);
     DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap);
 
     void init(const char *bratPath);

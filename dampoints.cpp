@@ -1,10 +1,5 @@
 #include "dampoints.h"
 
-DamPoints::DamPoints(const char *pointsPath)
-{
-    init(pointsPath);
-}
-
 DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap)
 {
     setDemPath(demPath);

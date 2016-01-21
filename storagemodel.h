@@ -2,19 +2,21 @@
 #define STORAGEMODEL_H
 
 #include "dampolygons.h"
+#include "reachlines.h"
 
 class StorageModel
 {
 public:
-    StorageModel();
+    StorageModel(const char *bratPath, const char *outPath, const char *demPath, double capacity);
 
-    int MonteCarloRun_Pond();
-    int MonteCarloRun_Reach();
-    int SingleRun_Pond();
-    int SingleRun_Reach();
+    void init(const char *bratPath, const char *outPath, const char *demPath, double capacity);
+
+    void cleanOutDir();
+    void run();
 
 private:
-    int nIterations;
+    const char *m_bratPath, *m_outPath, *m_demPath;
+    double bratCap;
 };
 
 #endif // STORAGEMODEL_H

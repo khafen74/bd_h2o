@@ -25,7 +25,6 @@ void DamPolygons::init(DamPoints pondPts)
     createPondPolygons(pPts_lyr, pPoly_lyr);
     calculateWaterDepth(pPts_lyr, pPoly_lyr);
     summarizePondDepths(pPts_lyr);
-    summarizeReachDepths(pPts_lyr);
 
     OGRDataSource::DestroyDataSource(pOutDs);
 }
