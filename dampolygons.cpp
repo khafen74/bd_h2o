@@ -48,7 +48,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
     OGRPolygon *pPolygon;
     OGRLinearRing *pRing;
     OGREnvelope bound;
-    Raster rasDem, rasLo, rasMid, rasHi, loPond, midPond, hiPond, loReach, midReach, hiReach;
+    Raster rasDem, rasLo, rasMid, rasHi, loPond, midPond, hiPond;
     rasDem.setProperties(m_demPath);
     rasLo.setProperties(m_qsLo.toStdString().c_str());
     rasMid.setProperties(m_qsMid.toStdString().c_str());
@@ -92,7 +92,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
                     if (demVal < lo)
                     {
                         depValNew = lo - demVal;
-                        if (depValNew > rasLo.valueAtPoint(x,y) && depValNew > 0.0)
+                        if (depValNew > rasLo.valueAtPoint(x,y) && depValNew > 0.0 && depValNew < pDamFeat->GetFieldAsDouble("ht_lo"))
                         {
                             rasLo.writeCellValue(m_qsLo.toStdString().c_str(), x, y, depValNew);
                             loPond.writeCellValue(m_qsLoPond.toStdString().c_str(), x, y, pondID*1.0);
@@ -102,7 +102,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
                     if (demVal < mid)
                     {
                         depValNew = mid - demVal;
-                        if (depValNew > rasMid.valueAtPoint(x,y) && depValNew > 0.0)
+                        if (depValNew > rasMid.valueAtPoint(x,y) && depValNew > 0.0 && depValNew < pDamFeat->GetFieldAsDouble("ht_mid"))
                         {
                             rasMid.writeCellValue(m_qsMid.toStdString().c_str(), x, y, depValNew);
                             midPond.writeCellValue(m_qsMidPond.toStdString().c_str(), x, y, pondID*1.0);
@@ -111,7 +111,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
                     if (demVal < hi)
                     {
                         depValNew = hi - demVal;
-                        if (depValNew > rasHi.valueAtPoint(x,y) && depValNew > 0.0)
+                        if (depValNew > rasHi.valueAtPoint(x,y) && depValNew > 0.0 && depValNew < pDamFeat->GetFieldAsDouble("ht_hi"))
                         {
                             rasHi.writeCellValue(m_qsHi.toStdString().c_str(), x, y, depValNew);
                             hiPond.writeCellValue(m_qsHiPond.toStdString().c_str(), x, y, pondID*1.0);
