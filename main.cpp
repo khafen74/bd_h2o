@@ -30,7 +30,7 @@ int test()
     const char *demIn1m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
     const char *demInLogan = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Raster/lc_dem_10m.tif";
 
-    StorageModel model(shpInLogan, shpOut, demInLogan, 1.0);
+    StorageModel model(shpIn, shpOut, demIn1m, 1.0);
     model.run();
 
     return 0;
