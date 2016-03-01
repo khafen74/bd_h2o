@@ -12,11 +12,13 @@ class DamPoints
 {
 public:
     DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap);
+    DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap, const char *exPath);
 
     void init(const char *bratPath);
+    void init(const char *bratPath, const char *exPath);
 
     void createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
-    void createDamPoints_Copy();
+    void createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createFields(OGRLayer *pLayer);
     QString getBratDir();
     QString getBratName();

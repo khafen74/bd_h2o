@@ -5,8 +5,6 @@ StorageModel::StorageModel(const char *bratPath, const char *outPath, const char
     init(bratPath, outPath, demPath, capacity);
 }
 
-
-
 void StorageModel::init(const char *bratPath, const char *outPath, const char *demPath, double capacity)
 {
     m_bratPath = bratPath;
@@ -31,6 +29,14 @@ void StorageModel::run()
 {
     cleanOutDir();
     DamPoints pondPoints(m_demPath, m_bratPath, m_outPath, bratCap);
+    DamPolygons pondPolys(pondPoints);
+    ReachLines reachStorage(pondPoints);
+}
+
+void StorageModel::runCompare(const char *damsIn)
+{
+    cleanOutDir();
+    DamPoints pondPoints(m_demPath, m_bratPath, m_outPath, bratCap, damsIn);
     DamPolygons pondPolys(pondPoints);
     ReachLines reachStorage(pondPoints);
 }

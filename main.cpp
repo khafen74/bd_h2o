@@ -29,9 +29,10 @@ int test()
     const char *demIn10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/templefk_10m_ws.tif";
     const char *demIn1m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/02_rasIn/fme450000.tif";
     const char *demInLogan = "C:/Users/khafe/Desktop/Classes/CEE_6400_Hydrology/FinalProject/Raster/lc_dem_10m.tif";
+    const char *exDams = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/ValidationLayers/Dams_BRAT_join5_UTM12N_pondArea.shp";
 
-    StorageModel model(shpIn, shpOut, demIn1m, 1.0);
-    model.run();
+    StorageModel model(shpIn, shpOut, demIn10m, 0.5);
+    model.runCompare(exDams);
 
     return 0;
 }

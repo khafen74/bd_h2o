@@ -13,6 +13,7 @@ public:
 
     void cleanOutDir();
     void run();
+    void runCompare(const char *damsIn);
 
 private:
     const char *m_bratPath, *m_outPath, *m_demPath;

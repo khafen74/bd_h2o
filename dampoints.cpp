@@ -8,6 +8,14 @@ DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *outD
     init(bratPath);
 }
 
+DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap, const char *exPath)
+{
+    setDemPath(demPath);
+    setOutDir(outDirPath);
+    setBratCapacity(modCap);
+    init(bratPath, exPath);
+}
+
 void DamPoints::init(const char *bratPath)
 {
     m_layerName = "ModeledDamPoints";
@@ -28,6 +36,36 @@ void DamPoints::init(const char *bratPath)
 
     createFields(pDamsOut);
     createDamPoints_BRAT(pBratIn, pDamsOut);
+
+    OGRDataSource::DestroyDataSource(pInDs);
+    OGRDataSource::DestroyDataSource(pOutDs);
+}
+
+void DamPoints::init(const char *bratPath, const char *exPath)
+{
+    m_layerName = "ModeledDamPoints";
+    loadDriver();
+
+    QString qsBratDir, qsBratName;
+    QFileInfo fi(QString::fromUtf8(bratPath));
+    setBratPath(fi.absolutePath());
+    setBratName(fi.baseName());
+    QFileInfo fi2(QString::fromUtf8(exPath));
+    QString exFilePath = fi2.absolutePath();
+    QString exName = fi2.baseName();
+
+    OGRDataSource *pInDs, *pOutDs, *pExDS;
+    OGRLayer *pBratIn, *pDamsOut, *pDamsIn;
+
+    pInDs = m_pDriverShp->CreateDataSource(m_qsBratDir.toStdString().c_str(), NULL);
+    pExDS = m_pDriverShp->CreateDataSource(exFilePath.toStdString().c_str(), NULL);
+    pOutDs = m_pDriverShp->CreateDataSource(m_outDir, NULL);
+    pBratIn = pInDs->GetLayerByName(m_qsBratName.toStdString().c_str());
+    pDamsIn = pExDS->GetLayerByName(exName.toStdString().c_str());
+    pDamsOut = pOutDs->CreateLayer(m_layerName, pBratIn->GetSpatialRef(), wkbPoint, NULL);
+
+    createFields(pDamsOut);
+    createDamPoints_Copy(pBratIn, pDamsOut, pDamsIn);
 
     OGRDataSource::DestroyDataSource(pInDs);
     OGRDataSource::DestroyDataSource(pOutDs);
@@ -101,6 +139,48 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
         }
     }
     OGRFeature::DestroyFeature(pDamFeat);
+    OGRFeature::DestroyFeature(pBratFeat);
+}
+
+void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
+{
+    const char *slopeField = "iGeo_Slope";
+    double sampleDist = 50.0;
+    OGRFeature *pBratFeat, *pOldFeat;
+    OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsLyr->GetLayerDefn());
+    Raster raster_dem;
+    int nFeatures = pExLyr->GetFeatureCount();
+
+    for (int i=0; i<nFeatures; i++)
+    {
+        pOldFeat = pExLyr->GetFeature(i);
+        int nBratFID = pOldFeat->GetFieldAsInteger("ID");
+        pBratFeat = pBratLyr->GetFeature(nBratFID);
+        double slope = pBratFeat->GetFieldAsDouble(slopeField);
+        OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
+        OGRLineString *pBratLine = (OGRLineString*) pGeom;
+        pGeom = pOldFeat->GetGeometryRef();
+        OGRPoint *pOldDam = (OGRPoint*) pGeom;
+        double az = Geometry::calcAzimuth(pBratLine->getX(pBratLine->getNumPoints()-1), pBratLine->getY(pBratLine->getNumPoints()-1), pBratLine->getX(0), pBratLine->getY(0));
+        Statistics lognormal(Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42), RDT_lnorm);
+
+        double x = pOldDam->getX();
+        double y = pOldDam->getY();
+        double elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pOldDam->getX(), pOldDam->getY(), az, sampleDist, x, y);
+        pOldDam->setX(x);
+        pOldDam->setY(y);
+        setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(pOldDam->getX(), pOldDam->getY(), pBratLine->getX(0), pBratLine->getY(0)), x, y);
+        setDamHeights(pDamFeat, lognormal.getLowerConfidenceLevel(), lognormal.getQuantile(0.5), lognormal.getUpperConfidenceLevel(), VectorOps::max(lognormal.getData()));
+
+        pDamFeat->SetGeometry(pOldDam);
+        if (elev > 0.0)
+        {
+            pDamsLyr->CreateFeature(pDamFeat);
+        }
+    }
+    OGRFeature::DestroyFeature(pDamFeat);
+    OGRFeature::DestroyFeature(pBratFeat);
+    OGRFeature::DestroyFeature(pOldFeat);
 }
 
 void DamPoints::createFields(OGRLayer *pLayer)
