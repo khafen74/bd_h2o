@@ -17,6 +17,7 @@ public:
     void init(const char *bratPath);
     void init(const char *bratPath, const char *exPath);
 
+    void compareArea(const char *damsIn, const char *csvOut);
     void createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
     void createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createFields(OGRLayer *pLayer);

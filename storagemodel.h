@@ -13,7 +13,7 @@ public:
 
     void cleanOutDir();
     void run();
-    void runCompare(const char *damsIn);
+    void runFromPoints(const char *damsIn, const char *csvOut);
 
 private:
     const char *m_bratPath, *m_outPath, *m_demPath;

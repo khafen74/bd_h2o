@@ -33,10 +33,11 @@ void StorageModel::run()
     ReachLines reachStorage(pondPoints);
 }
 
-void StorageModel::runCompare(const char *damsIn)
+void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
 {
     cleanOutDir();
     DamPoints pondPoints(m_demPath, m_bratPath, m_outPath, bratCap, damsIn);
     DamPolygons pondPolys(pondPoints);
     ReachLines reachStorage(pondPoints);
+    pondPoints.compareArea(damsIn, csvOut);
 }

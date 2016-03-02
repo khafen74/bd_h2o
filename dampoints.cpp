@@ -71,6 +71,51 @@ void DamPoints::init(const char *bratPath, const char *exPath)
     OGRDataSource::DestroyDataSource(pOutDs);
 }
 
+void DamPoints::compareArea(const char *damsIn, const char *csvOut)
+{
+    QFileInfo fi2(QString::fromUtf8(damsIn));
+    QString exFilePath = fi2.absolutePath();
+    QString exName = fi2.baseName();
+
+    OGRDataSource *pModDS, *pCompDS;
+    OGRLayer *pModLyr, *pCompLyr;
+
+    pModDS = m_pDriverShp->CreateDataSource(m_outDir, NULL);
+    pCompDS = m_pDriverShp->CreateDataSource(exFilePath.toStdString().c_str(), NULL);
+    pModLyr = pModDS->GetLayerByName(m_layerName);
+    pCompLyr = pCompDS->GetLayerByName(exName.toStdString().c_str());
+
+    QFile file(QString::fromUtf8(csvOut));
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream outStream(&file);
+    outStream << "fid,area,lo,mid,hi\n";
+    //outStream << "fid,type,area,lo,hi\n";
+
+    int nFeats = pCompLyr->GetFeatureCount();
+
+    OGRFeature *pModFeat, *pCompFeat;
+    double area, lo, mid, hi;
+
+    for (int i=0; i<nFeats; i++)
+    {
+        pCompFeat = pCompLyr->GetFeature(i);
+        pModFeat = pModLyr->GetFeature(i);
+        area = pCompFeat->GetFieldAsDouble("Shape_Area");
+        lo = pModFeat->GetFieldAsDouble("area_lo");
+        mid = pModFeat->GetFieldAsDouble("area_mid");
+        hi = pModFeat->GetFieldAsDouble("area_hi");
+        outStream <<i<<","<<area<<","<<lo<<","<<mid<<","<<hi<<"\n";
+        //outStream <<i<<","<<"Observed"<<","<<area<<"\n";
+        //outStream <<i<<","<<"Modeled"<<","<<mid<<","<<lo<<","<<hi<<"\n";
+    }
+
+    file.close();
+    OGRFeature::DestroyFeature(pModFeat);
+    OGRFeature::DestroyFeature(pCompFeat);
+    OGRDataSource::DestroyDataSource(pModDS);
+    OGRDataSource::DestroyDataSource(pCompDS);
+}
+
 void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 {
     const char *slopeField = "iGeo_Slope";
@@ -129,7 +174,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             damPoint.setX(x);
             damPoint.setY(y);
             setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
-            setDamHeights(pDamFeat, lognormal.getLowerConfidenceLevel(), lognormal.getQuantile(0.5), lognormal.getUpperConfidenceLevel(), VectorOps::max(lognormal.getData()));
+            setDamHeights(pDamFeat, lognormal.getQuantile(0.025), lognormal.getQuantile(0.5), lognormal.getQuantile(0.975), VectorOps::max(lognormal.getData()));
 
             pDamFeat->SetGeometry(&damPoint);
             if (elev > 0.0)
@@ -170,7 +215,7 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
         pOldDam->setX(x);
         pOldDam->setY(y);
         setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(pOldDam->getX(), pOldDam->getY(), pBratLine->getX(0), pBratLine->getY(0)), x, y);
-        setDamHeights(pDamFeat, lognormal.getLowerConfidenceLevel(), lognormal.getQuantile(0.5), lognormal.getUpperConfidenceLevel(), VectorOps::max(lognormal.getData()));
+        setDamHeights(pDamFeat, lognormal.getQuantile(0.025), lognormal.getQuantile(0.5), lognormal.getQuantile(0.975), VectorOps::max(lognormal.getData()));
 
         pDamFeat->SetGeometry(pOldDam);
         if (elev > 0.0)
