@@ -745,7 +745,7 @@ double Raster::sampleAlongLine_LowVal(double startX, double startY, double azimu
     GDALClose(pRas);
     //qDebug()<<"raster closed";
 
-    interval = transform[1];
+    interval = transform[1]/5.0;
     nSamples = ceil(distance/interval);
 
     //qDebug()<<"starting loop";

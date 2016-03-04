@@ -88,23 +88,30 @@ void DamPoints::compareArea(const char *damsIn, const char *csvOut)
     QFile file(QString::fromUtf8(csvOut));
     file.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream outStream(&file);
-    outStream << "fid,area,lo,mid,hi\n";
+    outStream << "fid,area,lo,mid,hi,dist,slope\n";
     //outStream << "fid,type,area,lo,hi\n";
 
     int nFeats = pCompLyr->GetFeatureCount();
 
     OGRFeature *pModFeat, *pCompFeat;
-    double area, lo, mid, hi;
+    double area, lo, mid, hi, dist, slope;
 
     for (int i=0; i<nFeats; i++)
     {
         pCompFeat = pCompLyr->GetFeature(i);
         pModFeat = pModLyr->GetFeature(i);
+        OGRPoint *point1, *point2;
+        OGRGeometry *pGeom = pCompFeat->GetGeometryRef();
+        point1 = (OGRPoint*) pGeom;
+        pGeom = pModFeat->GetGeometryRef();
+        point2 = (OGRPoint*) pGeom;
+        dist = Geometry::distance_point(point1->getX(), point1->getY(), point2->getX(), point2->getY());
         area = pCompFeat->GetFieldAsDouble("Shape_Area");
+        slope = pCompFeat->GetFieldAsDouble("iGeo_Slope");
         lo = pModFeat->GetFieldAsDouble("area_lo");
         mid = pModFeat->GetFieldAsDouble("area_mid");
         hi = pModFeat->GetFieldAsDouble("area_hi");
-        outStream <<i<<","<<area<<","<<lo<<","<<mid<<","<<hi<<"\n";
+        outStream <<i<<","<<area<<","<<lo<<","<<mid<<","<<hi<<","<<dist<<","<<slope<<"\n";
         //outStream <<i<<","<<"Observed"<<","<<area<<"\n";
         //outStream <<i<<","<<"Modeled"<<","<<mid<<","<<lo<<","<<hi<<"\n";
     }

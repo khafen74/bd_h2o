@@ -115,6 +115,14 @@ int Geometry::calcCoords(double startX, double startY, double azimuth, double di
     return 0;
 }
 
+double Geometry::distance_point(double x1, double y1, double x2, double y2)
+{
+    double xdiff = fabs(x1-x2);
+    double ydiff = fabs(y1-y2);
+    double dist = sqrt(pow(xdiff, 2.0) + pow(ydiff, 2.0));
+    return dist;
+}
+
 bool Geometry::pointInPolygon(OGRLinearRing *pRing, double x, double y)
 {
     double angle = 0.0;
