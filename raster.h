@@ -10,6 +10,7 @@
 
 const int ROW_OFFSET[9] = {-1,-1,-1,0,0,0,1,1,1};
 const int COL_OFFSET[9] = {-1,0,1,-1,0,1,-1,0,1};
+const int FLOW_DIR[9] = {8,4,2,16,0,1,32,64,128};
 const int ROW_OFFSET5[25] = {-2,-2,-2,-2,-2,-1,-1,-1,-1,-1,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2};
 const int COL_OFFSET5[25] = {-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2};
 
@@ -24,6 +25,7 @@ public:
     double area(const char *sourcePath);
     void aspect(const char *aspectPath);
     void aspect(const char *sourcePath, const char *aspectPath);
+    int checkRowCol(int row, int col);
     void demOfDifference(const char *oldDem, const char *newDem, const char *dodRaster);
     void extractByMask_CellCenters(const char *rasterOut, const char *polygonPath);
     void extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath);
@@ -33,11 +35,14 @@ public:
     void fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int rows, double noDataValue, double inTransform[], int headerRows = 0);
     int getCol(double xCoord);
     int getCols();
+    int getD8Index(int nFdir);
     const char *getPath();
     double getRow(double yCoord);
     int getRows();
     void greaterThan(const char *outPath, double value);
     void greaterThan(const char *inPath, const char *outPath, double value);
+    void heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath);
+    void heightAboveNetwork(const char *demPath, const char *fdirPath, const char *facPath, const char *outPath);
     void hillshade(const char *hlsdPath);
     void hillshade(const char *rasterPath, const char *hlsdPath);
     int regions(const char *regionsRaster);

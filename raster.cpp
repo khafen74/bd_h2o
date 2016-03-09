@@ -183,6 +183,21 @@ void Raster::aspect(const char *sourcePath, const char *aspectPath)
     aspect(aspectPath);
 }
 
+int Raster::checkRowCol(int row, int col)
+{
+    if (row < 1 || row >= nRows-1)
+    {
+        //qDebug()<<"row value out of range "<<row;
+        return 0;
+    }
+    if (col < 0 || col >= nCols-1)
+    {
+        //qDebug()<<"column out of range "<<col;
+        return 0;
+    }
+    return 1;
+}
+
 void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygonPath)
 {
     OGRDataSource *pPolyDS;
@@ -456,6 +471,42 @@ int Raster::getCols()
     return nCols;
 }
 
+int Raster::getD8Index(int nFdir)
+{
+    if (nFdir == 8)
+    {
+        return 0;
+    }
+    else if (nFdir == 4)
+    {
+        return 1;
+    }
+    else if (nFdir == 2)
+    {
+        return 2;
+    }
+    else if (nFdir == 16)
+    {
+        return 3;
+    }
+    else if (nFdir == 1)
+    {
+        return 5;
+    }
+    else if (nFdir == 32)
+    {
+        return 6;
+    }
+    else if (nFdir == 64)
+    {
+        return 7;
+    }
+    else if (nFdir == 128)
+    {
+        return 8;
+    }
+}
+
 const char *Raster::getPath()
 {
     return m_rasterPath.toStdString().c_str();
@@ -520,6 +571,109 @@ void Raster::greaterThan(const char *inPath, const char *outPath, double value)
 {
     setProperties(inPath);
     greaterThan(outPath, value);
+}
+
+void Raster::heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath)
+{
+    GDALDataset *pDemDS, *pFdirDS, *pFacDS, *pOutDS;
+
+    pDemDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
+    pFdirDS = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
+    pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
+    pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pOutDS->SetGeoTransform(transform);
+    pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
+
+    int nIndex, startRow, startCol, newRow, newCol;
+    QVector<QString> indices;
+    bool done, write;
+    unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
+    signed long int *facWin = (signed long int*) CPLMalloc(sizeof(signed long int)*9);
+    float *elevVal = (float*) CPLMalloc(sizeof(float)*1);
+    qDebug()<<"starting HAND loop";
+
+    for (int i=1; i<nRows-1; i++)
+    {
+        for (int j=1; j<nCols-1; j++)
+        {
+            startRow = i, startCol = j, newRow = i, newCol = j;
+
+
+            done = false, write = false;
+            int nCount = 0;
+            while (!done && nCount<2500)
+            {
+                //qDebug()<<newRow<<newCol;
+                indices.clear();
+                pFdirDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+                pFacDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, facWin, 3, 3, GDT_Int32, 0, 0);
+
+                if (facWin[4] > 0)
+                {
+                    //qDebug()<<"fac value > 0 "<<facWin[4];
+                    write = true;
+                    nIndex = 4;
+                }
+                else if (fdirWin[4] > 0)
+                {
+                    //qDebug()<<"flow dir "<<fdirWin[4];
+                    nIndex = getD8Index(fdirWin[4]);
+
+                    if (checkRowCol(newRow+ROW_OFFSET[nIndex], newCol+COL_OFFSET[nIndex]))
+                    {
+                        indices.append(QString::number(newRow) + " "+ QString::number(newCol));
+                        newRow += ROW_OFFSET[nIndex], newCol += COL_OFFSET[nIndex];
+                        if (indices.indexOf(QString::number(newRow) + " "+ QString::number(newCol)) != -1)
+                        {
+                            qDebug()<<"matching index";
+                            done = true;
+                        }
+                        if (facWin[nIndex] > 0)
+                        {
+                            //qDebug()<<"Write positive fac "<<facWin[nIndex];
+                            write = true;
+                        }
+                    }
+                    else
+                    {
+                        done = true;
+                    }
+                }
+                else
+                {
+                    done = true;
+                }
+
+                if (write)
+                {
+                    pDemDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
+                    pOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
+                    //qDebug()<<"elev val written "<<*elevVal;
+                    done = true;
+                }
+                nCount++;
+            }
+            //qDebug()<<"col "<<j+1<<" of "<<nRows<<" completed";
+        }
+        qDebug()<<"row "<<i+1<<" of "<<nRows<<" completed";
+    }
+
+
+    CPLFree(fdirWin);
+    CPLFree(facWin);
+    CPLFree(elevVal);
+
+    GDALClose(pDemDS);
+    GDALClose(pFdirDS);
+    GDALClose(pFacDS);
+    GDALClose(pOutDS);
+}
+
+void Raster::heightAboveNetwork(const char *demPath, const char *fdirPath, const char *facPath, const char *outPath)
+{
+    setProperties(demPath);
+    heightAboveNetwork(fdirPath, facPath, outPath);
 }
 
 void Raster::hillshade(const char *hlsdPath)
