@@ -24,7 +24,8 @@ SOURCES += main.cpp \
     dampoints.cpp \
     dampolygons.cpp \
     vectorops.cpp \
-    reachlines.cpp
+    reachlines.cpp \
+    raster_beaverpond.cpp
 
 win32: LIBS += -L$$PWD/../../../../../../../MinGW/msys/1.0/local/lib/ -llibgdal
 
@@ -40,4 +41,5 @@ HEADERS += \
     dampoints.h \
     dampolygons.h \
     vectorops.h \
-    reachlines.h
+    reachlines.h \
+    raster_beaverpond.h

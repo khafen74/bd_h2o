@@ -251,6 +251,36 @@ void DamPolygons::createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys)
     }
 }
 
+QString DamPolygons::getHiDepthPath()
+{
+    return m_qsHi;
+}
+
+QString DamPolygons::getLoDepthPath()
+{
+    return m_qsLo;
+}
+
+QString DamPolygons::getMidDepthPath()
+{
+    return m_qsMid;
+}
+
+QString DamPolygons::getHiPondPath()
+{
+    return m_qsHiPond;
+}
+
+QString DamPolygons::getLoPondPath()
+{
+    return m_qsLoPond;
+}
+
+QString DamPolygons::getMidPondPath()
+{
+    return m_qsMidPond;
+}
+
 double DamPolygons::getUpstreamDistance(double dist)
 {
     if (dist > m_maxDist)

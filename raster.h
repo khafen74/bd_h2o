@@ -10,7 +10,7 @@
 
 const int ROW_OFFSET[9] = {-1,-1,-1,0,0,0,1,1,1};
 const int COL_OFFSET[9] = {-1,0,1,-1,0,1,-1,0,1};
-const int FLOW_DIR[9] = {8,4,2,16,0,1,32,64,128};
+const int FLOW_DIR[9] = {32,64,128,16,0,1,8,4,2};
 const int ROW_OFFSET5[25] = {-2,-2,-2,-2,-2,-1,-1,-1,-1,-1,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2};
 const int COL_OFFSET5[25] = {-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2};
 
@@ -49,6 +49,8 @@ public:
     int regions(const char *inputRaster, const char *regionsRaster);
     double sampleAlongLine_LowVal(double startX, double startY, double azimuth, double distance, double &x, double &y);
     double sampleAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
+    void setNoData(double noDataValue, double minDataValue, double maxDataValue);
+    void setNoData(const char *rasterPath, double noDataValue, double minDataValue, double maxDataValue);
     void setProperties(const char *rasterPath);
     void slopeTOF(const char *slopePath);
     void slopeTOF(const char *sourcePath, const char *slopePath);
@@ -68,8 +70,6 @@ public:
     void zeroToNoData(const char *sourcePath, double noDataValue);
 
 protected:
-
-private:
     int nRows, nCols;
     double transform[6], noData;
     QString m_rasterPath;

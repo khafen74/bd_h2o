@@ -473,15 +473,15 @@ int Raster::getCols()
 
 int Raster::getD8Index(int nFdir)
 {
-    if (nFdir == 8)
+    if (nFdir == 32)
     {
         return 0;
     }
-    else if (nFdir == 4)
+    else if (nFdir == 64)
     {
         return 1;
     }
-    else if (nFdir == 2)
+    else if (nFdir == 128)
     {
         return 2;
     }
@@ -493,15 +493,15 @@ int Raster::getD8Index(int nFdir)
     {
         return 5;
     }
-    else if (nFdir == 32)
+    else if (nFdir == 8)
     {
         return 6;
     }
-    else if (nFdir == 64)
+    else if (nFdir == 4)
     {
         return 7;
     }
-    else if (nFdir == 128)
+    else if (nFdir == 2)
     {
         return 8;
     }
@@ -583,7 +583,8 @@ void Raster::heightAboveNetwork(const char *fdirPath, const char *facPath, const
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pOutDS->SetGeoTransform(transform);
     pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
-    pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pOutDS->GetRasterBand(1)->Fill(noData);
+    //qDebug()<<"no data value "<<noData;
 
     int nIndex, startRow, startCol, newRow, newCol;
     QVector<QString> indices;
@@ -624,7 +625,7 @@ void Raster::heightAboveNetwork(const char *fdirPath, const char *facPath, const
                     {
                         indices.append(QString::number(newRow) + " "+ QString::number(newCol));
                         newRow += ROW_OFFSET[nIndex], newCol += COL_OFFSET[nIndex];
-                        if (indices.indexOf(QString::number(newRow) + " "+ QString::number(newCol)) != -1)
+                        if (indices.indexOf(QString::number(newRow) + " " + QString::number(newCol)) != -1)
                         {
                             qDebug()<<"matching index";
                             done = true;
@@ -939,6 +940,45 @@ double Raster::sampleAlongLine_LowVal(const char *rasterPath, double startX, dou
     double value = sampleAlongLine_LowVal(startX, startY, azimuth, distance, x, y);
 
     return value;
+}
+
+void Raster::setNoData(double noDataValue, double minDataValue, double maxDataValue)
+{
+    GDALDataset *pSourceDS;
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
+    pSourceDS->GetRasterBand(1)->SetNoDataValue(noDataValue);
+
+    float *readRow = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *writeRow = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    for (int i=0; i<nRows; i++)
+    {
+        pSourceDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, readRow, nCols, 1, GDT_Float32, 0, 0);
+        for (int j=0; j<nCols; j++)
+        {
+            if (readRow[j] < minDataValue || readRow[j] > maxDataValue)
+            {
+                writeRow[j] = noDataValue;
+            }
+            else
+            {
+                writeRow[j] = readRow[j];
+            }
+        }
+        pSourceDS->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, writeRow, nCols, 1, GDT_Float32, 0, 0);
+    }
+
+    CPLFree(readRow);
+    CPLFree(writeRow);
+
+    GDALClose(pSourceDS);
+}
+
+void Raster::setNoData(const char *rasterPath, double noDataValue, double minDataValue, double maxDataValue)
+{
+    setProperties(rasterPath);
+    setNoData(noDataValue, minDataValue, maxDataValue);
+    setProperties(rasterPath);
 }
 
 void Raster::setProperties(const char *rasterPath)

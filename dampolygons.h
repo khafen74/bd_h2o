@@ -19,6 +19,12 @@ public:
     void createFields(OGRLayer *pLayer);
     void createFields_BRAT(OGRLayer *pLayer);
     void createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys);
+    QString getHiDepthPath();
+    QString getLoDepthPath();
+    QString getMidDepthPath();
+    QString getHiPondPath();
+    QString getLoPondPath();
+    QString getMidPondPath();
     double getUpstreamDistance(double dist);
     void setDemPath(const char *demPath);
     void setFieldValues(OGRFeature *pFeat, int bratID, int pondID);
