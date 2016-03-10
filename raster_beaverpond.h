@@ -9,7 +9,7 @@ class Raster_BeaverPond : public Raster
 public:
     Raster_BeaverPond();
 
-    void createHANDInput(const char *pondPath, const char *facPath);
+    void createHANDInput(const char *pondPath, const char *facPath, const char *outPath);
     //void waterSurfaceElevation(const char *sourcePath, const char *waterDepth, const char *outPath);
 };
 

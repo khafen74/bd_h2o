@@ -3,6 +3,7 @@
 
 #include "dampolygons.h"
 #include "reachlines.h"
+#include "raster_beaverpond.h"
 
 class StorageModel
 {
@@ -14,13 +15,14 @@ public:
     void calcFinalWSE(DamPolygons pondExtents);
     void calcSurfaceWSE();
     void cleanOutDir();
+    void createHandInputs();
     void run();
     void runFromPoints(const char *damsIn, const char *csvOut);
     void setOutputPaths(DamPolygons pondExtents);
 
 private:
     const char *m_bratPath, *m_outPath, *m_demPath, *m_fdirPath, *m_facPath;
-    QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths;
+    QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths, m_qvHandIn;
     double bratCap;
 };
 

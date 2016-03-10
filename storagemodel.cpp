@@ -19,6 +19,8 @@ void StorageModel::calcFinalWSE(DamPolygons pondExtents)
 {
     qDebug()<<"setting output paths";
     setOutputPaths(pondExtents);
+    qDebug()<<"starting HAND inputs";
+    createHandInputs();
     qDebug()<<"starting surface WSE";
     calcSurfaceWSE();
     qDebug()<<"starting final WSE";
@@ -45,6 +47,16 @@ void StorageModel::cleanOutDir()
     }
 }
 
+void StorageModel::createHandInputs()
+{
+    Raster_BeaverPond rasterBP;
+
+    for (int i=0; i<m_qvPondPaths.length(); i++)
+    {
+        rasterBP.createHANDInput(m_qvPondPaths[i].toStdString().c_str(), m_facPath, m_qvHandIn[i].toStdString().c_str());
+    }
+}
+
 void StorageModel::run()
 {
     cleanOutDir();
@@ -65,11 +77,12 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
 
 void StorageModel::setOutputPaths(DamPolygons pondExtents)
 {
-    m_qvPondPaths.clear(), m_qvSurfaceDepthPaths.clear(), m_qvSurfaceWSEPaths.clear(), m_qvWSEPaths.clear();
+    m_qvPondPaths.clear(), m_qvSurfaceDepthPaths.clear(), m_qvSurfaceWSEPaths.clear(), m_qvWSEPaths.clear(), m_qvHandIn.clear();
     m_qvPondPaths.append(pondExtents.getLoPondPath()), m_qvPondPaths.append(pondExtents.getMidPondPath()), m_qvPondPaths.append(pondExtents.getHiPondPath());
     m_qvSurfaceDepthPaths.append(pondExtents.getLoDepthPath()), m_qvSurfaceDepthPaths.append(pondExtents.getMidDepthPath()), m_qvSurfaceDepthPaths.append(pondExtents.getHiDepthPath());
     QFileInfo fi(pondExtents.getHiDepthPath());
     QString absPath = fi.absolutePath();
     m_qvSurfaceWSEPaths.append(absPath+"/WSESurf_lo.tif"), m_qvSurfaceWSEPaths.append(absPath+"/WSESurf_mid.tif"), m_qvSurfaceWSEPaths.append(absPath+"/WSESurf_hi.tif");
     m_qvWSEPaths.append(absPath+"/WSE_lo.tif"), m_qvWSEPaths.append(absPath+"/WSE_mid.tif"), m_qvWSEPaths.append(absPath+"/WSE_hi.tif");
+    m_qvHandIn.append(absPath+"/HAND_lo.tif"), m_qvHandIn.append(absPath+"/HAND_mid.tif"), m_qvHandIn.append(absPath+"/HAND_hi.tif");
 }
