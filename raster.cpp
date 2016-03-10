@@ -5,7 +5,61 @@ Raster::Raster()
 
 }
 
-void Raster::add(const char *addPath)
+void Raster::add(const char *addPath, const char *outPath)
+{
+    GDALDataset *pSourceDS, *pAddDs, *pOutDS;
+
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
+    pAddDs = (GDALDataset*) GDALOpen(addPath, GA_ReadOnly);
+    pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pOutDS->SetGeoTransform(transform);
+    pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pOutDS->GetRasterBand(1)->Fill(noData);
+
+    float *srcRow = (float*) CPLMalloc(sizeof(float)*nRows);
+    float *addRow = (float*) CPLMalloc(sizeof(float)*nRows);
+    float *outRow = (float*) CPLMalloc(sizeof(float)*nRows);
+
+    for (int i=0; i<nRows; i++)
+    {
+        pSourceDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, srcRow, nCols, 1, GDT_Float32, 0, 0);
+        pAddDs->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, addRow, nCols, 1, GDT_Float32, 0, 0);
+
+        for (int j=0; j<nCols; j++)
+        {
+            if (srcRow[j] == noData)
+            {
+                outRow[j] = noData;
+            }
+            else if (addRow[j] == noData)
+            {
+                outRow[j] = srcRow[j];
+            }
+            else
+            {
+                outRow[j] = srcRow[j] + addRow[j];
+            }
+        }
+
+        pOutDS->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, outRow, nCols, 1, GDT_Float32, 0, 0);
+    }
+
+    CPLFree(srcRow);
+    CPLFree(addRow);
+    CPLFree(outRow);
+
+    GDALClose(pSourceDS);
+    GDALClose(pAddDs);
+    GDALClose(pOutDS);
+}
+
+void Raster::add(const char *sourcePath, const char *addPath, const char *outPath)
+{
+    setProperties(sourcePath);
+    add(addPath, outPath);
+}
+
+void Raster::addTo(const char *addPath)
 {
     GDALDataset *pSourceDS, *pAddDS;
 
@@ -48,10 +102,10 @@ void Raster::add(const char *addPath)
     CPLFree(newRow);
 }
 
-void Raster::add(const char *sourcePath, const char *addPath)
+void Raster::addTo(const char *sourcePath, const char *addPath)
 {
     setProperties(sourcePath);
-    add(addPath);
+    addTo(addPath);
 }
 
 double Raster::area()

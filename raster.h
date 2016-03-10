@@ -19,8 +19,10 @@ class Raster
 public:
     Raster();
 
-    void add(const char *addPath);
-    void add(const char *sourcePath, const char *addPath);
+    void add(const char *addPath, const char *outPath);
+    void add(const char *sourcePath, const char *addPath, const char *outPath);
+    void addTo(const char *addPath);
+    void addTo(const char *sourcePath, const char *addPath);
     double area();
     double area(const char *sourcePath);
     void aspect(const char *aspectPath);

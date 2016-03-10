@@ -37,14 +37,14 @@ int test()
     const char *heightOut10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/hand10m.tif";
     const char *test10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/test.tif";
 
-    StorageModel model(shpIn, shpOut, demIn10m, 0.5);
+    StorageModel model(shpIn, shpOut, demIn10m, fdir10m, fac10m, 0.5);
     model.run();
     //model.runFromPoints(exDams, csvOut);
 
-    Raster raster;
+    //Raster raster;
     //raster.setNoData(fil10m, -9999, 0, 5000);
-    raster.heightAboveNetwork(fil10m, fdir10m, fac10m, heightOut10m);
-    raster.subtract(demIn10m, heightOut10m, test10m);
+    //raster.heightAboveNetwork(fil10m, fdir10m, fac10m, heightOut10m);
+    //raster.subtract(demIn10m, heightOut10m, test10m);
 
     return 0;
 }
