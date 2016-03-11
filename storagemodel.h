@@ -14,6 +14,7 @@ public:
 
     void calcFinalWSE(DamPolygons pondExtents);
     void calcSurfaceWSE();
+    void calcWSEChange();
     void cleanOutDir();
     void createHandInputs();
     void run();
@@ -22,7 +23,8 @@ public:
 
 private:
     const char *m_bratPath, *m_outPath, *m_demPath, *m_fdirPath, *m_facPath;
-    QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths, m_qvHandIn;
+    QString m_absPath;
+    QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths, m_qvHandIn, m_qvGWPondID, m_qvGWChange;
     double bratCap;
 };
 

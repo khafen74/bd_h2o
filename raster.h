@@ -29,8 +29,8 @@ public:
     void aspect(const char *sourcePath, const char *aspectPath);
     int checkRowCol(int row, int col);
     void demOfDifference(const char *oldDem, const char *newDem, const char *dodRaster);
-    void extractByMask_CellCenters(const char *rasterOut, const char *polygonPath);
-    void extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath);
+    void extractByMask_CellCenters(const char *rasterOut, const char *polygonPath, const char *lyrName);
+    void extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath, const char *lyrName);
     void filterLowPass(const char *filterRaster);
     void filterLowPass(const char *sourceRaster, const char *filterRaster);
     double findMax(const char *rasterPath);

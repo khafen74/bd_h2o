@@ -252,10 +252,11 @@ int Raster::checkRowCol(int row, int col)
     return 1;
 }
 
-void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygonPath)
+void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygonPath, const char *lyrName)
 {
     OGRDataSource *pPolyDS;
     OGRSFDriver *pDriverShp;
+    OGRRegisterAll();
     OGRSFDriverRegistrar *registrar = OGRSFDriverRegistrar::GetRegistrar();
     pDriverShp = registrar->GetDriverByName("ESRI Shapefile");
 
@@ -265,16 +266,15 @@ void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygo
 
     double noData = -9999;
 
-    GDALDriver *pDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
-    GDALDataset *pRasterOut = pDriver->Create(rasterOut,pRaster->GetRasterXSize(), pRaster->GetRasterYSize(), 1, GDT_Float32, NULL);
+    GDALDataset *pRasterOut = pDriverTiff->Create(rasterOut,pRaster->GetRasterXSize(), pRaster->GetRasterYSize(), 1, GDT_Float32, NULL);
     pRasterOut->SetGeoTransform(geot);
     pRasterOut->GetRasterBand(1)->Fill(noData);
     pRasterOut->GetRasterBand(1)->SetNoDataValue(noData);
 
     pPolyDS = pDriverShp->CreateDataSource(polygonPath);
-    OGRLayer *pPolyLayer = pPolyDS->GetLayerByName("DamSearchPolygons");
+    OGRLayer *pPolyLayer = pPolyDS->GetLayerByName(lyrName);
 
-    float *val = (float*) CPLMalloc(sizeof(float));
+    float *val = (float*) CPLMalloc(sizeof(float)*1);
 
     int nPolyCount = pPolyLayer->GetFeatureCount();
     double angle;
@@ -312,7 +312,6 @@ void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygo
                 {
                     double delev = pPolyFeat->GetFieldAsDouble("d_elev");
                     pRaster->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, val, 1, 1, GDT_Float32, 0, 0);
-                    *val = delev - *val;
                     pRasterOut->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, val, 1, 1, GDT_Float32, 0, 0);
                 }
             }
@@ -328,11 +327,11 @@ void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygo
     GDALClose(pRasterOut);
 }
 
-void Raster::extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath)
+void Raster::extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath, const char *lyrName)
 {
     setProperties(rasterPath);
 
-    extractByMask_CellCenters(rasterOut, polygonPath);
+    extractByMask_CellCenters(rasterOut, polygonPath, lyrName);
 }
 
 void Raster::filterLowPass(const char *filterRaster)
@@ -645,15 +644,16 @@ void Raster::heightAboveNetwork(const char *fdirPath, const char *facPath, const
     bool done, write;
     unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
     signed long int *facWin = (signed long int*) CPLMalloc(sizeof(signed long int)*9);
+    float *elevValStart = (float*) CPLMalloc(sizeof(float)*1);
     float *elevVal = (float*) CPLMalloc(sizeof(float)*1);
-    qDebug()<<"starting HAND loop";
+    //qDebug()<<"starting HAND loop";
 
     for (int i=1; i<nRows-1; i++)
     {
         for (int j=1; j<nCols-1; j++)
         {
+            pDemDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, elevValStart, 1, 1, GDT_Float32, 0, 0);
             startRow = i, startCol = j, newRow = i, newCol = j;
-
 
             done = false, write = false;
             int nCount = 0;
@@ -684,9 +684,8 @@ void Raster::heightAboveNetwork(const char *fdirPath, const char *facPath, const
                             qDebug()<<"matching index";
                             done = true;
                         }
-                        if (facWin[nIndex] > 0)
+                        if (facWin[nIndex] != noData)
                         {
-                            //qDebug()<<"Write positive fac "<<facWin[nIndex];
                             write = true;
                         }
                     }
@@ -703,20 +702,21 @@ void Raster::heightAboveNetwork(const char *fdirPath, const char *facPath, const
                 if (write)
                 {
                     pDemDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
+                    *elevVal = *elevValStart - *elevVal;
                     pOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
-                    //qDebug()<<"elev val written "<<*elevVal;
                     done = true;
                 }
                 nCount++;
             }
             //qDebug()<<"col "<<j+1<<" of "<<nRows<<" completed";
         }
-        qDebug()<<"row "<<i+1<<" of "<<nRows<<" completed";
+        //qDebug()<<"row "<<i+1<<" of "<<nRows<<" completed";
     }
 
 
     CPLFree(fdirWin);
     CPLFree(facWin);
+    CPLFree(elevValStart);
     CPLFree(elevVal);
 
     GDALClose(pDemDS);

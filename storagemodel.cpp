@@ -17,13 +17,18 @@ void StorageModel::init(const char *bratPath, const char *outPath, const char *d
 
 void StorageModel::calcFinalWSE(DamPolygons pondExtents)
 {
-    qDebug()<<"setting output paths";
     setOutputPaths(pondExtents);
-    qDebug()<<"starting HAND inputs";
     createHandInputs();
-    qDebug()<<"starting surface WSE";
     calcSurfaceWSE();
-    qDebug()<<"starting final WSE";
+
+    Raster_BeaverPond rasterBP;
+    for (int i=0; i<m_qvHandIn.length(); i++)
+    {
+        rasterBP.heightAboveNetwork(m_qvSurfaceWSEPaths[i].toStdString().c_str(), m_fdirPath, m_qvHandIn[i].toStdString().c_str(),
+                                       m_qvWSEPaths[i].toStdString().c_str(), m_qvGWPondID[i].toStdString().c_str());
+    }
+
+    calcWSEChange();
 }
 
 void StorageModel::calcSurfaceWSE()
@@ -32,6 +37,19 @@ void StorageModel::calcSurfaceWSE()
     for (int i=0; i<m_qvSurfaceDepthPaths.length(); i++)
     {
         raster.add(m_demPath, m_qvSurfaceDepthPaths[i].toStdString().c_str(), m_qvSurfaceWSEPaths[i].toStdString().c_str());
+    }
+}
+
+void StorageModel::calcWSEChange()
+{
+    QString startHAND = m_absPath + "/WSE_start.tif";
+    Raster raster;
+    Raster_BeaverPond rasterBP;
+    raster.heightAboveNetwork(m_demPath, m_fdirPath, m_facPath, startHAND.toStdString().c_str());
+
+    for (int i=0; i<m_qvGWChange.length(); i++)
+    {
+        rasterBP.subractHAND(startHAND.toStdString().c_str(), m_qvWSEPaths[i].toStdString().c_str(), m_qvGWChange[i].toStdString().c_str());
     }
 }
 
@@ -77,12 +95,15 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
 
 void StorageModel::setOutputPaths(DamPolygons pondExtents)
 {
-    m_qvPondPaths.clear(), m_qvSurfaceDepthPaths.clear(), m_qvSurfaceWSEPaths.clear(), m_qvWSEPaths.clear(), m_qvHandIn.clear();
+    m_qvPondPaths.clear(), m_qvSurfaceDepthPaths.clear(), m_qvSurfaceWSEPaths.clear(), m_qvWSEPaths.clear(), m_qvHandIn.clear(), m_qvGWPondID.clear(), m_qvGWChange.clear();
     m_qvPondPaths.append(pondExtents.getLoPondPath()), m_qvPondPaths.append(pondExtents.getMidPondPath()), m_qvPondPaths.append(pondExtents.getHiPondPath());
     m_qvSurfaceDepthPaths.append(pondExtents.getLoDepthPath()), m_qvSurfaceDepthPaths.append(pondExtents.getMidDepthPath()), m_qvSurfaceDepthPaths.append(pondExtents.getHiDepthPath());
     QFileInfo fi(pondExtents.getHiDepthPath());
     QString absPath = fi.absolutePath();
+    m_absPath = absPath;
     m_qvSurfaceWSEPaths.append(absPath+"/WSESurf_lo.tif"), m_qvSurfaceWSEPaths.append(absPath+"/WSESurf_mid.tif"), m_qvSurfaceWSEPaths.append(absPath+"/WSESurf_hi.tif");
     m_qvWSEPaths.append(absPath+"/WSE_lo.tif"), m_qvWSEPaths.append(absPath+"/WSE_mid.tif"), m_qvWSEPaths.append(absPath+"/WSE_hi.tif");
     m_qvHandIn.append(absPath+"/HAND_lo.tif"), m_qvHandIn.append(absPath+"/HAND_mid.tif"), m_qvHandIn.append(absPath+"/HAND_hi.tif");
+    m_qvGWPondID.append(absPath+"/GWPondID_lo.tif"),  m_qvGWPondID.append(absPath+"/GWPondID_mid.tif"),  m_qvGWPondID.append(absPath+"/GWPondID_hi.tif");
+    m_qvGWChange.append(absPath+"/WSEChange_lo.tif"), m_qvGWChange.append(absPath+"/WSEChange_mid.tif"), m_qvGWChange.append(absPath+"/WSEChange_hi.tif");
 }
