@@ -31,6 +31,8 @@ public:
     void demOfDifference(const char *oldDem, const char *newDem, const char *dodRaster);
     void extractByMask_CellCenters(const char *rasterOut, const char *polygonPath, const char *lyrName);
     void extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath, const char *lyrName);
+    void fillSinks(const char *fillDem, double maxDepth);
+    void fillSinks(const char *inputDem, const char *fillDem, double maxDepth);
     void filterLowPass(const char *filterRaster);
     void filterLowPass(const char *sourceRaster, const char *filterRaster);
     double findMax(const char *rasterPath);
@@ -78,6 +80,7 @@ protected:
     GDALDriver *pDriverTiff;
 
     void loadDrivers();
+    double getSinkValueSingle(double window[8]);
 };
 
 #endif // RASTER_H

@@ -51,9 +51,29 @@ int test()
     const char *heightOut10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/hand10m.tif";
     const char *test10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/test.tif";
 
-    StorageModel model(shpIn, shpOut, demIn1m_clip, fdir1m_clip, fac1m_clip, 0.5);
-    model.run();
+    //StorageModel model(shpIn, shpOut, demIn1m_clip, fdir1m_clip, fac1m_clip, 0.5);
+    //model.run();
     //model.runFromPoints(exDams, csvOut);
+
+    const char *handfil = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160310_10m_GW/WSE_start.tif";
+    const char *handfdir = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160310_10m_GW/HAND_fdir.tif";
+    const char *pondmid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160310_10m_GW/depMidPond.tif";
+    const char *handin = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160310_10m_GW/HAND_inMid.tif";
+    const char *handnew = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160310_10m_GW/HAND_outMid.tif";
+    const char *handchange = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160310_10m_GW/HAND_change.tif";
+    const char *pondid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160310_10m_GW/HAND_pondid.tif";
+
+    Raster_BeaverPond rasterBP;
+    qDebug()<<"creating hand in";
+    rasterBP.createHANDInput(pondmid, fac10m_clip, handin);
+    qDebug()<<"done";
+    Raster raster;
+    qDebug()<<"height above network";
+    rasterBP.heightAboveNetwork(demIn10m, handfdir, handin, handnew, pondid);
+    qDebug()<<"subtract";
+    rasterBP.subtractHAND(handfil, handnew, handchange);
+    qDebug()<<"done";
+
 
     //Raster raster;
     //raster.extractByMask_CellCenters(demIn1m, demIn1m_clip, shpInDir, vbtm200buf);

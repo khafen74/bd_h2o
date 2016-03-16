@@ -88,7 +88,7 @@ void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *fac
                 pFdirDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
                 pFacDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, facWin, 3, 3, GDT_Int32, 0, 0);
 
-                if (facWin[4] > 0)
+                if (facWin[4] > -1)
                 {
                     write = true;
                     nIndex = 4;
@@ -106,7 +106,7 @@ void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *fac
                             qDebug()<<"matching index";
                             done = true;
                         }
-                        if (facWin[nIndex] != noData)
+                        if (facWin[nIndex] > -1)
                         {
                             write = true;
                         }
@@ -155,7 +155,7 @@ void Raster_BeaverPond::heightAboveNetwork(const char *demPath, const char *fdir
     heightAboveNetwork(fdirPath, facPath, outPath, outPondID);
 }
 
-void Raster_BeaverPond::subractHAND(const char *endPath, const char *outPath)
+void Raster_BeaverPond::subtractHAND(const char *endPath, const char *outPath)
 {
     GDALDataset *pSourceDS, *pEndDs, *pOutDS;
     pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
@@ -202,9 +202,9 @@ void Raster_BeaverPond::subractHAND(const char *endPath, const char *outPath)
     GDALClose(pOutDS);
 }
 
-void Raster_BeaverPond::subractHAND(const char *startPath, const char *endPath, const char *outPath)
+void Raster_BeaverPond::subtractHAND(const char *startPath, const char *endPath, const char *outPath)
 {
     setProperties(startPath);
-    subractHAND(endPath, outPath);
+    subtractHAND(endPath, outPath);
 }
 

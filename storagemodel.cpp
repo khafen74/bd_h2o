@@ -49,7 +49,7 @@ void StorageModel::calcWSEChange()
 
     for (int i=0; i<m_qvGWChange.length(); i++)
     {
-        rasterBP.subractHAND(startHAND.toStdString().c_str(), m_qvWSEPaths[i].toStdString().c_str(), m_qvGWChange[i].toStdString().c_str());
+        rasterBP.subtractHAND(startHAND.toStdString().c_str(), m_qvWSEPaths[i].toStdString().c_str(), m_qvGWChange[i].toStdString().c_str());
     }
 }
 

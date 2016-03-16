@@ -12,8 +12,8 @@ public:
     void createHANDInput(const char *pondPath, const char *facPath, const char *outPath);
     void heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID);
     void heightAboveNetwork(const char *demPath, const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID);
-    void subractHAND(const char *endPath, const char *outPath);
-    void subractHAND(const char *startPath, const char *endPath, const char *outPath);
+    void subtractHAND(const char *endPath, const char *outPath);
+    void subtractHAND(const char *startPath, const char *endPath, const char *outPath);
     //void waterSurfaceElevation(const char *sourcePath, const char *waterDepth, const char *outPath);
 };
 
