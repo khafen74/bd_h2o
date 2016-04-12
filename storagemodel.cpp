@@ -78,9 +78,12 @@ void StorageModel::createHandInputs()
 void StorageModel::run()
 {
     cleanOutDir();
+    qDebug()<<"creating dam points";
     DamPoints pondPoints(m_demPath, m_bratPath, m_outPath, bratCap);
+    qDebug()<<"creating pond polygons";
     DamPolygons pondPolys(pondPoints);
-    calcFinalWSE(pondPolys);
+    //calcFinalWSE(pondPolys);
+    qDebug()<<"calculating reach storage";
     ReachLines reachStorage(pondPoints);
 }
 

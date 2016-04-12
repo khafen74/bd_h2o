@@ -26,7 +26,7 @@ void Raster_BeaverPond::createHANDInput(const char *pondPath, const char *facPat
         pPondDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, pndRow, nCols, 1, GDT_Float32, 0, 0);
         for (int j=0; j<nCols; j++)
         {
-            if (pndRow[j] != noData)
+            if (pndRow[j] != noData && facRow[j] > 0) //now only applies pond data to stream raster
             {
                 outRow[j] = pndRow[j];
             }
@@ -53,16 +53,19 @@ void Raster_BeaverPond::createHANDInput(const char *pondPath, const char *facPat
 
 void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID)
 {
-    GDALDataset *pDemDS, *pFdirDS, *pFacDS, *pOutDS;
+    GDALDataset *pDemDS, *pFdirDS, *pFacDS, *pOutDS, *pIdDS;
 
     pDemDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pFdirDS = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
     pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pIdDS = pDriverTiff->Create(outPondID, nCols, nRows, 1, GDT_Int32, NULL);
     pOutDS->SetGeoTransform(transform);
     pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
     pOutDS->GetRasterBand(1)->Fill(noData);
-    //qDebug()<<"no data value "<<noData;
+    pIdDS->SetGeoTransform(transform);
+    pIdDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pIdDS->GetRasterBand(1)->Fill(noData);
 
     int nIndex, startRow, startCol, newRow, newCol;
     QVector<QString> indices;
@@ -71,7 +74,7 @@ void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *fac
     signed long int *facWin = (signed long int*) CPLMalloc(sizeof(signed long int)*9);
     float *elevValStart = (float*) CPLMalloc(sizeof(float)*1);
     float *elevVal = (float*) CPLMalloc(sizeof(float)*1);
-    //qDebug()<<"starting HAND loop";
+    signed long int *pondVal = (signed long int*) CPLMalloc(sizeof(signed long int));
 
     for (int i=1; i<nRows-1; i++)
     {
@@ -88,7 +91,7 @@ void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *fac
                 pFdirDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
                 pFacDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, facWin, 3, 3, GDT_Int32, 0, 0);
 
-                if (facWin[4] > -1)
+                if (facWin[4] >= -1)
                 {
                     write = true;
                     nIndex = 4;
@@ -125,11 +128,13 @@ void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *fac
                 {
                     pDemDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
                     *elevVal = *elevValStart - *elevVal;
+                    *pondVal = facWin[nIndex];
                     if (*elevVal < 0 || nIndex == 4)
                     {
                         *elevVal = noData;
                     }
                     pOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
+                    pIdDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, pondVal, 1, 1, GDT_Int32, 0, 0);
                     done = true;
                 }
                 nCount++;
@@ -142,11 +147,13 @@ void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *fac
     CPLFree(facWin);
     CPLFree(elevValStart);
     CPLFree(elevVal);
+    CPLFree(pondVal);
 
     GDALClose(pDemDS);
     GDALClose(pFdirDS);
     GDALClose(pFacDS);
     GDALClose(pOutDS);
+    GDALClose(pIdDS);
 }
 
 void Raster_BeaverPond::heightAboveNetwork(const char *demPath, const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID)

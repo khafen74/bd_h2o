@@ -137,6 +137,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 
     for (int i=0; i<nFeatures; i++)
     {
+        qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
         int nDamCount = 0;
         double length, damDens, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
         OGRPoint point1, point2;
