@@ -53,6 +53,8 @@ public:
     int regions(const char *inputRaster, const char *regionsRaster);
     double sampleAlongLine_LowVal(double startX, double startY, double azimuth, double distance, double &x, double &y);
     double sampleAlongLine_LowVal(const char * rasterPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
+    double sampleAlongLine_RasterVal(const char *checkRasPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
+    double sampleAlongLine_RasterVal(const char * rasterPath, const char *checkRasPath, double startX, double startY, double azimuth, double distance, double &x, double &y);
     void setNoData(double noDataValue, double minDataValue, double maxDataValue);
     void setNoData(const char *rasterPath, double noDataValue, double minDataValue, double maxDataValue);
     void setProperties(const char *rasterPath);
@@ -72,6 +74,8 @@ public:
     double xCoordinate(int col);
     double yCoordinate(int row);
     void zeroToNoData(const char *sourcePath, double noDataValue);
+
+    static double rasterValueAtPoint(const char *rasterPath, double xCoord, double yCoord);
 
 protected:
     int nRows, nCols;

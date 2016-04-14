@@ -996,6 +996,85 @@ double Raster::sampleAlongLine_LowVal(const char *rasterPath, double startX, dou
     return value;
 }
 
+double Raster::sampleAlongLine_RasterVal(const char *checkRasPath, double startX, double startY, double azimuth, double distance, double &x, double &y)
+{
+    double az1, az2, interval;
+    double transform[6];
+    double newX, newY, rasValue, rasValue2, lowValue, reValue;
+    bool found;
+    int nSamples;
+    az1 = Geometry::addDegrees(azimuth, 90.0);
+    az2 = Geometry::addDegrees(azimuth, -90.0);
+
+    //qDebug()<<"opening raster";
+    GDALDataset *pRas;
+    pRas = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
+    pRas->GetGeoTransform(transform);
+    GDALClose(pRas);
+    //qDebug()<<"raster closed";
+
+    interval = transform[1]/10.0;
+    nSamples = ceil(distance/interval);
+
+    //qDebug()<<"starting loop";
+    found = false;
+    for (int i=0; i<nSamples; i++)
+    {
+        Geometry::calcCoords(startX, startY, az1, interval*(i+1), newX, newY);
+        rasValue = valueAtPoint(newX, newY);
+        rasValue2 = rasterValueAtPoint(checkRasPath, newX, newY);
+        if (rasValue2 > 0.0)
+        {
+            reValue = rasValue;
+            found = true;
+            i = nSamples;
+        }
+        if (i==0)
+        {
+            lowValue = rasValue;
+            x = newX, y = newY;
+        }
+        else
+        {
+            if (rasValue < lowValue)
+            {
+                lowValue = rasValue;
+                x = newX, y = newY;
+            }
+        }
+        Geometry::calcCoords(startX, startY, az2, interval*(i+1), newX, newY);
+        rasValue = valueAtPoint(newX, newY);
+        rasValue2 = rasterValueAtPoint(checkRasPath, newX, newY);
+        if (rasValue2 > 0.0)
+        {
+            reValue = rasValue;
+            found = true;
+            i = nSamples;
+        }
+        if (rasValue < lowValue)
+        {
+            lowValue = rasValue;
+            x = newX, y = newY;
+        }
+    }
+
+    if (!found)
+    {
+        reValue = lowValue;
+    }
+
+    return reValue;
+}
+
+double Raster::sampleAlongLine_RasterVal(const char *rasterPath, const char *checkRasPath, double startX, double startY, double azimuth, double distance, double &x, double &y)
+{
+    setProperties(rasterPath);
+
+    double value = sampleAlongLine_RasterVal(checkRasPath, startX, startY, azimuth, distance, x, y);
+
+    return value;
+}
+
 void Raster::setNoData(double noDataValue, double minDataValue, double maxDataValue)
 {
     GDALDataset *pSourceDS;
@@ -1033,6 +1112,10 @@ void Raster::setNoData(const char *rasterPath, double noDataValue, double minDat
     setProperties(rasterPath);
     setNoData(noDataValue, minDataValue, maxDataValue);
     setProperties(rasterPath);
+//    for (int i=0; i<6; i++)
+//    {
+//        qDebug()<<transform[i];
+//    }
 }
 
 void Raster::setProperties(const char *rasterPath)
@@ -1368,6 +1451,14 @@ void Raster::zeroToNoData(const char *sourcePath, double noDataValue)
 
     CPLFree(oldRow);
     CPLFree(newRow);
+}
+
+double Raster::rasterValueAtPoint(const char *rasterPath, double xCoord, double yCoord)
+{
+    Raster raster;
+    raster.setProperties(rasterPath);
+    double value = raster.valueAtPoint(xCoord, yCoord);
+    return value;
 }
 
 void Raster::loadDrivers()

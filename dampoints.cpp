@@ -1,16 +1,18 @@
 #include "dampoints.h"
 
-DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap)
+DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap)
 {
     setDemPath(demPath);
+    setFacPath(facPath);
     setOutDir(outDirPath);
     setBratCapacity(modCap);
     init(bratPath);
 }
 
-DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap, const char *exPath)
+DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap, const char *exPath)
 {
     setDemPath(demPath);
+    setFacPath(facPath);
     setOutDir(outDirPath);
     setBratCapacity(modCap);
     init(bratPath, exPath);
@@ -21,7 +23,6 @@ void DamPoints::init(const char *bratPath)
     m_layerName = "ModeledDamPoints";
     loadDriver();
 
-    QString qsBratDir, qsBratName;
     QFileInfo fi(QString::fromUtf8(bratPath));
     setBratPath(fi.absolutePath());
     setBratName(fi.baseName());
@@ -127,7 +128,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 {
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
-    double sampleDist = 50.0;
+    double sampleDist = 25.0;
     int nDams = 0;
 
     OGRFeature *pBratFeat;
@@ -137,7 +138,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 
     for (int i=0; i<nFeatures; i++)
     {
-        qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
+        //qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
         int nDamCount = 0;
         double length, damDens, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
         OGRPoint point1, point2;
@@ -156,6 +157,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
         slope = pBratFeat->GetFieldAsDouble(slopeField);
 
         nDamCount = round(length * (damDens/1000.0) * m_modCap);
+        qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
 
         if (nDamCount > 0)
         {
@@ -166,7 +168,8 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             spacing = 0.0;
         }
         azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
-        end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
+        //end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
+        end_elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
         nDams += nDamCount;
 
         for (int j=0; j<nDamCount; j++)
@@ -178,7 +181,8 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             pBratLine->Value(pointDist, &damPoint);
             double x = damPoint.getX();
             double y = damPoint.getY();
-            elev = raster_dem.sampleAlongLine_LowVal(m_demPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
+            //elev = raster_dem.sampleAlongLine_LowVal(m_demPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
+            elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
             damPoint.setX(x);
             damPoint.setY(y);
             setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
@@ -349,6 +353,11 @@ void DamPoints::setDamHeights(OGRFeature *pFeat, double low, double mid, double 
     pFeat->SetField("ht_mid", mid);
     pFeat->SetField("ht_hi", high);
     pFeat->SetField("ht_max", max);
+}
+
+void DamPoints::setFacPath(const char *facPath)
+{
+    m_facPath = facPath;
 }
 
 void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY)

@@ -79,7 +79,7 @@ void StorageModel::run()
 {
     cleanOutDir();
     qDebug()<<"creating dam points";
-    DamPoints pondPoints(m_demPath, m_bratPath, m_outPath, bratCap);
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap);
     qDebug()<<"creating pond polygons";
     DamPolygons pondPolys(pondPoints);
     //calcFinalWSE(pondPolys);
@@ -90,7 +90,7 @@ void StorageModel::run()
 void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
 {
     cleanOutDir();
-    DamPoints pondPoints(m_demPath, m_bratPath, m_outPath, bratCap, damsIn);
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn);
     DamPolygons pondPolys(pondPoints);
     ReachLines reachStorage(pondPoints);
     pondPoints.compareArea(damsIn, csvOut);

@@ -11,8 +11,8 @@
 class DamPoints
 {
 public:
-    DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap);
-    DamPoints(const char *demPath, const char *bratPath, const char *outDirPath, double modCap, const char *exPath);
+    DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap);
+    DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap, const char *exPath);
 
     void init(const char *bratPath);
     void init(const char *bratPath, const char *exPath);
@@ -32,6 +32,7 @@ public:
     void setBratName(QString name);
     void setDemPath(const char *demPath);
     void setDamHeights(OGRFeature *pFeat, double low, double mid, double high, double max);
+    void setFacPath(const char *facPath);
     void setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY);
     void setOutDir(const char *outDirPath);
 
@@ -41,7 +42,7 @@ private:
     OGRSFDriver *m_pDriverShp;
 
     double m_modCap, m_meanDamHeight, m_confHi, m_confLo;
-    const char *m_outDir, *m_layerName, *m_demPath;
+    const char *m_outDir, *m_layerName, *m_demPath, *m_facPath;
     QString m_qsBratDir, m_qsBratName;
 };
 
