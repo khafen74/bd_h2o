@@ -969,7 +969,7 @@ double Raster::sampleAlongLine_LowVal(double startX, double startY, double azimu
         }
         else
         {
-            if (rasValue < lowValue)
+            if (rasValue < lowValue && rasValue != noData)
             {
                 lowValue = rasValue;
                 x = newX, y = newY;
@@ -977,7 +977,7 @@ double Raster::sampleAlongLine_LowVal(double startX, double startY, double azimu
         }
         Geometry::calcCoords(startX, startY, az2, interval*(i+1), newX, newY);
         rasValue = valueAtPoint(newX, newY);
-        if (rasValue < lowValue)
+        if (rasValue < lowValue && rasValue != noData)
         {
             lowValue = rasValue;
             x = newX, y = newY;
@@ -1036,7 +1036,7 @@ double Raster::sampleAlongLine_RasterVal(const char *checkRasPath, double startX
         }
         else
         {
-            if (rasValue < lowValue)
+            if (rasValue < lowValue && rasValue != noData)
             {
                 lowValue = rasValue;
                 x = newX, y = newY;
@@ -1051,7 +1051,7 @@ double Raster::sampleAlongLine_RasterVal(const char *checkRasPath, double startX
             found = true;
             i = nSamples;
         }
-        if (rasValue < lowValue)
+        if (rasValue < lowValue && rasValue != noData)
         {
             lowValue = rasValue;
             x = newX, y = newY;

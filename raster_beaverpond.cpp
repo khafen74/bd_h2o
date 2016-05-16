@@ -51,6 +51,46 @@ void Raster_BeaverPond::createHANDInput(const char *pondPath, const char *facPat
     GDALClose(pOutDS);
 }
 
+void Raster_BeaverPond::flowDownstream(const char *fdirPath, const char *facPath, const char *demPath)
+{
+    GDALDataset *pGwDS, *pFdirDS, *pFacDS, *pDemDS;
+
+    pGwDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
+    pFdirDS = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
+    pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
+
+    unsigned char *fdirVal = (unsigned char*) CPLMalloc(sizeof(unsigned char));
+    signed long int *facVal = (signed long int*) CPLMalloc(sizeof(signed long int));
+    float *gwRow = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *gwVal = (float*) CPLMalloc(sizeof(float)*1);
+    float *demVal = (float*) CPLMalloc(sizeof(float)*1);
+
+    for (int i=0; i<nRows; i++)
+    {
+        for (int j=0; j<nCols; j++)
+        {
+
+        }
+    }
+
+    CPLFree(fdirVal);
+    CPLFree(facVal);
+    CPLFree(gwRow);
+    CPLFree(gwVal);
+    CPLFree(demVal);
+
+    GDALClose(pGwDS);
+    GDALClose(pFdirDS);
+    GDALClose(pFacDS);
+    GDALClose(pDemDS);
+}
+
+void Raster_BeaverPond::flowDownstream(const char *gwPath, const char *fdirPath, const char *facPath, const char *demPath)
+{
+    setProperties(gwPath);
+    flowDownstream(fdirPath, facPath, demPath);
+}
+
 void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID)
 {
     GDALDataset *pDemDS, *pFdirDS, *pFacDS, *pOutDS, *pIdDS;

@@ -10,6 +10,8 @@ public:
     Raster_BeaverPond();
 
     void createHANDInput(const char *pondPath, const char *facPath, const char *outPath);
+    void flowDownstream(const char *fdirPath, const char *facPath, const char *demPath);
+    void flowDownstream(const char *gwPath, const char *fdirPath, const char *facPath, const char *demPath);
     void heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID);
     void heightAboveNetwork(const char *demPath, const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID);
     void subtractHAND(const char *endPath, const char *outPath);

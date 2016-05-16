@@ -130,6 +130,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
     const char *densField = "oCC_EX";
     double sampleDist = 25.0;
     int nDams = 0;
+    long lastFID = -9999;
 
     OGRFeature *pBratFeat;
     OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsLyr->GetLayerDefn());
@@ -139,7 +140,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
     for (int i=0; i<nFeatures; i++)
     {
         //qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
-        int nDamCount = 0;
+        int nDamCount = 0, nErrCount = 0;
         double length, damDens, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
         OGRPoint point1, point2;
         pBratFeat = pBratLyr->GetFeature(i);;
@@ -168,8 +169,8 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             spacing = 0.0;
         }
         azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
-        //end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
-        end_elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
+        end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
+        //end_elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
         nDams += nDamCount;
 
         for (int j=0; j<nDamCount; j++)
@@ -181,17 +182,22 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             pBratLine->Value(pointDist, &damPoint);
             double x = damPoint.getX();
             double y = damPoint.getY();
-            //elev = raster_dem.sampleAlongLine_LowVal(m_demPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
-            elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
+            elev = raster_dem.sampleAlongLine_LowVal(m_demPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
+            //elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
             damPoint.setX(x);
             damPoint.setY(y);
             setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
             setDamHeights(pDamFeat, lognormal.getQuantile(0.025), lognormal.getQuantile(0.5), lognormal.getQuantile(0.975), VectorOps::max(lognormal.getData()));
 
             pDamFeat->SetGeometry(&damPoint);
+            qDebug()<<"Field Values "<<i<<elev<<slope<<Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy)<<x<<y;
             if (elev > 0.0)
             {
-                pDamsLyr->CreateFeature(pDamFeat);
+                if (pDamsLyr->CreateFeature(pDamFeat) != OGRERR_NONE)
+                {
+                    nErrCount++;
+                    qDebug()<<"error writing dam point "<<nErrCount;
+                }
             }
         }
     }
