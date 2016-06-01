@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    run();
+    test();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -52,9 +52,9 @@ int test()
     const char *heightOut10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/hand10m.tif";
     const char *test10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/test.tif";
 
-    //StorageModel model(shpIn, shpOut, demIn1m_clip, fdir1m_clip, fac1m_clip, 0.5);
-    //model.run();
-    //model.runFromPoints(exDams, csvOut);
+//    StorageModel model(shpIn, shpOut, demIn10m_clip, fdir10m_clip, fac10m_clip, 0.5);
+//    model.run();
+//    model.runFromPoints(exDams, csvOut);
 
     const char *handfil = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/WSE_start2.tif";
     const char *watsurf = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/dem_dep2.tif";
@@ -65,20 +65,24 @@ int test()
     const char *handnew = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/HAND_outMid2.tif";
     const char *handchange = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/HAND_change2.tif";
     const char *pondid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/HAND_pondId2.tif";
+    const char *gwextend = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/gw_extend.tif";
 
     Raster_BeaverPond rasterBP;
     Raster raster;
-    //raster.setNoData(fil1m, -9999, 0, 5000);
-    qDebug()<<"creating hand in";
-    rasterBP.createHANDInput(pondmid, fac10m_clip, handin);
-    qDebug()<<"adding pond depth to dem";
-    rasterBP.add(fil10m, depmid, watsurf);
-    qDebug()<<"height above network";
-    raster.heightAboveNetwork(fil10m, fdir10m_clip, fac10m_clip, handfil);
-    rasterBP.heightAboveNetwork(watsurf, fdir10m_clip, handin, handnew, pondid);
-    qDebug()<<"subtract";
-    rasterBP.subtractHAND(handfil, handnew, handchange);
-    qDebug()<<"done";
+//    //raster.setNoData(fil1m, -9999, 0, 5000);
+//    qDebug()<<"creating hand in";
+//    rasterBP.createHANDInput(pondmid, fac10m_clip, handin);
+//    qDebug()<<"adding pond depth to dem";
+//    rasterBP.add(fil10m, depmid, watsurf);
+//    qDebug()<<"height above network";
+//    raster.heightAboveNetwork(fil10m, fdir10m_clip, fac10m_clip, handfil);
+//    rasterBP.heightAboveNetwork(watsurf, fdir10m_clip, handin, handnew, pondid);
+//    qDebug()<<"subtract";
+//    rasterBP.subtractHAND(handfil, handnew, handchange);
+//    qDebug()<<"done";
+
+    //testing gw extension via D8 flow direction
+    rasterBP.flowDownstream(handchange, fdir10m, fac10m, demIn10m, pondmid, watsurf, gwextend);
 
 
     //Raster raster;
@@ -124,7 +128,7 @@ int run()
     const char *heightOut10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/hand10m.tif";
     const char *test10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/test.tif";
 
-    StorageModel model(shpInLogan, shpOut, demInLogan, fdirLogan, facLogan, 0.5);
+    StorageModel model(shpIn, shpOut, demIn10m, fdir10m, fac10m, 0.5);
     model.run();
 
     //StorageModel model(shpIn, shpOut, demIn10m_clip, fdir10m_clip, fac10m_clip, 0.5);

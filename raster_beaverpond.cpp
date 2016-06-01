@@ -51,31 +51,82 @@ void Raster_BeaverPond::createHANDInput(const char *pondPath, const char *facPat
     GDALClose(pOutDS);
 }
 
-void Raster_BeaverPond::flowDownstream(const char *fdirPath, const char *facPath, const char *demPath)
+void Raster_BeaverPond::flowDownstream(const char *fdirPath, const char *facPath, const char *demPath, const char *pidPath, const char *gwePath, const char *outPath)
 {
-    GDALDataset *pGwDS, *pFdirDS, *pFacDS, *pDemDS;
+    GDALDataset *pGwDS, *pFdirDS, *pFacDS, *pDemDS, *pGweDS, *pOutDS;
 
     pGwDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
     pFdirDS = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
     pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
+    pDemDS = (GDALDataset*) GDALOpen(demPath, GA_ReadOnly);
+    pGweDS = (GDALDataset*) GDALOpen(demPath, GA_ReadOnly);
+    pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pOutDS->SetGeoTransform(transform);
+    pOutDS->GetRasterBand(1)->Fill(-9999);
+    pOutDS->GetRasterBand(1)->SetNoDataValue(-9999);
 
     unsigned char *fdirVal = (unsigned char*) CPLMalloc(sizeof(unsigned char));
     signed long int *facVal = (signed long int*) CPLMalloc(sizeof(signed long int));
-    float *gwRow = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *gweVal = (float*) CPLMalloc(sizeof(float)*1);
     float *gwVal = (float*) CPLMalloc(sizeof(float)*1);
     float *demVal = (float*) CPLMalloc(sizeof(float)*1);
+
+    double gwStart, gweStart;
+    int newRow, newCol, nIndex;
+    int nChanged = 0;
 
     for (int i=0; i<nRows; i++)
     {
         for (int j=0; j<nCols; j++)
         {
+            pGwDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, gwVal, 1, 1, GDT_Float32, 0, 0);
 
+            if (*gwVal != noData && *gwVal > 0.0)
+            {
+                newRow = i, newCol = j;
+                pDemDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
+                pGweDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, gweVal, 1, 1, GDT_Float32, 0, 0);
+                gwStart = *gwVal, gweStart = *gweVal;
+                pFdirDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, fdirVal, 1, 1, GDT_Byte, 0, 0);
+                nIndex = getD8Index(*fdirVal);
+                newRow += ROW_OFFSET[nIndex];
+                newCol += COL_OFFSET[nIndex];
+                pGwDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, gwVal, 1, 1, GDT_Float32, 0, 0);
+                pFacDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, facVal, 1, 1, GDT_Int32, 0, 0);
+                int nCount = 0;
+
+                while (nIndex > -1 && *facVal < 1 && *gwVal <= 0.0 && nCount < 500)
+                {
+
+                    pDemDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
+                    pGweDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, gweVal, 1, 1, GDT_Float32, 0, 0);
+                    pFdirDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, fdirVal, 1, 1, GDT_Byte, 0, 0);
+                    if (*gweVal > *demVal)
+                    {
+                        *gweVal = *demVal;
+                    }
+                    pOutDS->GetRasterBand(1)->RasterIO(GF_Write, newCol, newRow, 1, 1, gweVal, 1, 1, GDT_Float32, 0, 0);
+                    nIndex = getD8Index(*fdirVal);
+                    newRow += ROW_OFFSET[nIndex];
+                    newCol += COL_OFFSET[nIndex];
+                    pGwDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, gwVal, 1, 1, GDT_Float32, 0, 0);
+                    pFacDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, facVal, 1, 1, GDT_Int32, 0, 0);
+                    nCount++;
+                    nChanged++;
+                    if (nCount == 499)
+                    {
+                        qDebug()<<"tracing over 500 cells downstream";
+                    }
+                }
+            }
         }
     }
 
+    qDebug()<<nChanged<<" gw cells updated";
+
     CPLFree(fdirVal);
     CPLFree(facVal);
-    CPLFree(gwRow);
+    CPLFree(gweVal);
     CPLFree(gwVal);
     CPLFree(demVal);
 
@@ -83,12 +134,16 @@ void Raster_BeaverPond::flowDownstream(const char *fdirPath, const char *facPath
     GDALClose(pFdirDS);
     GDALClose(pFacDS);
     GDALClose(pDemDS);
+    GDALClose(pGweDS);
+    GDALClose(pOutDS);
 }
 
-void Raster_BeaverPond::flowDownstream(const char *gwPath, const char *fdirPath, const char *facPath, const char *demPath)
+void Raster_BeaverPond::flowDownstream(const char *gwPath, const char *fdirPath, const char *facPath, const char *demPath, const char *pidPath, const char *gwePath, const char *outPath)
 {
+    qDebug()<<"starting flow downstream";
+    //qDebug()<<"file paths"<<gwPath<<fdirPath<<facPath<<demPath<<pidPath<<gwePath<<outPath;
     setProperties(gwPath);
-    flowDownstream(fdirPath, facPath, demPath);
+    flowDownstream(fdirPath, facPath, demPath, pidPath, gwePath, outPath);
 }
 
 void Raster_BeaverPond::heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID)

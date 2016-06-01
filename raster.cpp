@@ -558,6 +558,10 @@ int Raster::getD8Index(int nFdir)
     {
         return 8;
     }
+    else
+    {
+        return -1;
+    }
 }
 
 const char *Raster::getPath()
