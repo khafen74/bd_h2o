@@ -19,6 +19,7 @@ public:
     void createHandInputs();
     void run();
     void runFromPoints(const char *damsIn, const char *csvOut);
+    void runFromPointsWithHeights(const char *damsIn, const char *csvOut);
     void setOutputPaths(DamPolygons pondExtents);
 
 private:
