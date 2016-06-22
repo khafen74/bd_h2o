@@ -5,7 +5,9 @@
 
 int test();
 int run();
+int validate();
 int pataha();
+int testStats();
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +15,9 @@ int main(int argc, char *argv[])
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    test();
+    //test();
+    validate();
+    //testStats();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -56,33 +60,35 @@ int test()
 //    model.run();
 //    model.runFromPoints(exDams, csvOut);
 
-    const char *handfil = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/WSE_start2.tif";
-    const char *watsurf = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/dem_dep2.tif";
-    const char *handfdir = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160311_10m_GW/HAND_fdir.tif";
-    const char *depmid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160311_10m_GW/depMid.tif";
-    const char *pondmid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160311_10m_GW/depMidPond.tif";
-    const char *handin = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/HAND_inMid2.tif";
-    const char *handnew = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/HAND_outMid2.tif";
-    const char *handchange = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/HAND_change2.tif";
-    const char *pondid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/HAND_pondId2.tif";
-    const char *gwextend = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160411_10m_GW/gw_extend.tif";
+    const char *handfil = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/WSE_start.tif";
+    const char *watsurf = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/dem_dep.tif";
+    const char *handfdir = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/HAND_fdir.tif";
+    const char *depmid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/depMid.tif";
+    const char *pondmid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/depMidPond.tif";
+    const char *handin = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/HAND_inMid.tif";
+    const char *handnew = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/HAND_outMid.tif";
+    const char *handchange = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/HAND_change.tif";
+    const char *pondid = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/HAND_pondId.tif";
+    const char *gwextend = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/gw_extend.tif";
+    const char *gwdepth = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/gw_depth.tif";
 
     Raster_BeaverPond rasterBP;
     Raster raster;
-//    //raster.setNoData(fil1m, -9999, 0, 5000);
-//    qDebug()<<"creating hand in";
-//    rasterBP.createHANDInput(pondmid, fac10m_clip, handin);
-//    qDebug()<<"adding pond depth to dem";
-//    rasterBP.add(fil10m, depmid, watsurf);
-//    qDebug()<<"height above network";
-//    raster.heightAboveNetwork(fil10m, fdir10m_clip, fac10m_clip, handfil);
-//    rasterBP.heightAboveNetwork(watsurf, fdir10m_clip, handin, handnew, pondid);
-//    qDebug()<<"subtract";
-//    rasterBP.subtractHAND(handfil, handnew, handchange);
-//    qDebug()<<"done";
+    //raster.setNoData(fil1m, -9999, 0, 5000);
+    qDebug()<<"creating hand in";
+    rasterBP.createHANDInput(pondmid, fac10m_clip, handin);
+    qDebug()<<"adding pond depth to dem";
+    rasterBP.add(fil10m, depmid, watsurf);
+    qDebug()<<"height above network";
+    raster.heightAboveNetwork(fil10m, handfdir, fac10m_clip, handfil);
+    rasterBP.heightAboveNetwork(watsurf, handfdir, handin, handnew, pondid);
+    qDebug()<<"subtract";
+    rasterBP.subtractHAND(handfil, handnew, handchange);
+    qDebug()<<"done";
 
     //testing gw extension via D8 flow direction
-    rasterBP.flowDownstream(handchange, fdir10m, fac10m, demIn10m, pondmid, watsurf, gwextend);
+    //rasterBP.groundwaterDepth(handfil, handnew, gwdepth);
+    rasterBP.flowDownstream(handchange, fdir10m, fac10m, demIn10m, pondmid, gwdepth, gwextend);
 
 
     //Raster raster;
@@ -140,6 +146,23 @@ int run()
     return 0;
 }
 
+int validate()
+{
+    //Logan HUC 8 inputs
+    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/01_shpIn/brat.shp";
+    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/02_rasIn/fil10m2.tif";
+    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/02_rasIn/fdir10m2.tif";
+    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/02_rasIn/fac10m_1700.tif";
+    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/03_out";
+    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/01_shpIn/Dams_LoganHUC8_JoinBRAT.shp";
+    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/03_out/comparison.csv";
+
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0);
+    model.runFromPoints(damsPath, csvPath);
+
+    return 0;
+}
+
 int pataha()
 {
     const char *shpIn = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/Pataha/Inputs/ModelIn/Pataha_BRAT.shp";
@@ -150,6 +173,26 @@ int pataha()
 
     StorageModel model(shpIn, shpOut, demIn, fdir, fac, 0.5);
     model.run();
+
+    return 0;
+}
+
+int testStats()
+{
+    QString fn = "C:/Users/khafe/Desktop/teststat.txt";
+    Statistics normDist(Random::randomSeries(100000, RDT_norm, 0.93, 0.17), RDT_norm);
+    QVector<double> data = normDist.getData();
+
+    QFile file(fn);
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream outStream(&file);
+
+    for (int i=0; i<data.length(); i++)
+    {
+        outStream<<data[i]<<"\n";
+    }
+
+    file.close();
 
     return 0;
 }

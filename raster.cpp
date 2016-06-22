@@ -1340,6 +1340,29 @@ double Raster::sum(const char *rasterPath)
     return dSum;
 }
 
+void Raster::translateToGeoTIFF(const char *inPath, const char *outPath)
+{
+    setProperties(inPath);
+
+    GDALDataset *inDS, *outDS;
+    inDS = (GDALDataset*) GDALOpen(inPath, GA_ReadOnly);
+    outDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+
+    float *inval = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *outval = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    for (int i=500; i<502; i++)
+    {
+        inDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, inval, nCols, 1, GDT_Float32, 0, 0);
+        for (int j=0; j<nCols; j++)
+        {
+            outval[j] = inval[j];
+            qDebug()<<inval[j];
+        }
+        outDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, outval, nCols, 1, GDT_Float32, 0, 0);
+    }
+}
+
 double Raster::valueAtPoint(double xCoord, double yCoord)
 {
     GDALDataset *pRaster;

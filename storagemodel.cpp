@@ -93,7 +93,7 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn);
     DamPolygons pondPolys(pondPoints);
     ReachLines reachStorage(pondPoints);
-    pondPoints.compareArea(damsIn, csvOut);
+    //pondPoints.compareArea(damsIn, csvOut);
 }
 
 void StorageModel::setOutputPaths(DamPolygons pondExtents)

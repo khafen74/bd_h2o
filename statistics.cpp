@@ -3,10 +3,9 @@
 Statistics::Statistics(QVector<double> sample, DIST_TYPE distr)
 {
     setSample(sample);  
-    qSort(m_qvSample.begin(), m_qvSample.end());
     setDistributionType(distr);
-    calcMu();
-    calcSigma();
+    //calcMu();
+    //calcSigma();
 }
 
 void Statistics::calcConfidenceInterval(ConfInt ci)
@@ -37,11 +36,13 @@ void Statistics::calcCredibleInterval(ConfInt ci)
     switch(m_distr)
     {
         case RDT_norm:
+            m_ciLo = getQuantile(oneSide);
+            m_ciHi = getQuantile(1-oneSide);
             break;
         case RDT_lnorm:
             m_ciLo = getQuantile(oneSide);
             m_ciHi = getQuantile(1-oneSide);
-        break;
+            break;
     }
 }
 
@@ -108,7 +109,13 @@ double Statistics::calcStdLognormal()
 
 double Statistics::calcStdNormal()
 {
+    double mean = calcMeanNormal();
+    double sumv = 0.0;
 
+    for (int i=0; i<m_qvSample.length(); i++)
+    {
+        sumv += pow((m_qvSample[i]-mean),2);
+    }
 }
 
 QVector<double> Statistics::getData()
@@ -149,7 +156,10 @@ void Statistics::setMu(double mu)
 
 void Statistics::setSample(QVector<double> sample)
 {
+    m_qvSample.clear();
     m_qvSample = sample;
+    //qSort(m_qvSample.begin(), m_qvSample.end());
+    qSort(m_qvSample);
 }
 
 void Statistics::setSigma(double sigma)
