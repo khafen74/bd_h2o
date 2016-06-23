@@ -1253,7 +1253,7 @@ void Raster::subtract(const char *sourcePath, const char *subtractPath, const ch
 
     GDALDataset *pSourceDS, *pSubtractDS, *pOutDS;
 
-    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_Update);
+    pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pSubtractDS = (GDALDataset*) GDALOpen(subtractPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outputPath, nCols, nRows, 1, GDT_Float32, NULL);
 
@@ -1293,13 +1293,13 @@ void Raster::subtract(const char *sourcePath, const char *subtractPath, const ch
         pOutDS->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, newRow, nCols, 1, GDT_Float32, 0, 0);
     }
 
-    GDALClose(pSourceDS);
-    GDALClose(pSubtractDS);
-    GDALClose(pOutDS);
-
     CPLFree(srcRow);
     CPLFree(subRow);
     CPLFree(newRow);
+
+    GDALClose(pSourceDS);
+    GDALClose(pSubtractDS);
+    GDALClose(pOutDS);
 }
 
 double Raster::sum()

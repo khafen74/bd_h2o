@@ -34,6 +34,7 @@ public:
     void setOutDirPath(const char *outDir);
     void setRasterPaths();
     void summarizePondDepths(OGRLayer *pPts);
+    void summarizePondDepths_raster(OGRLayer *pPts);
     void summarizeReachDepths(OGRLayer *pPts);
 
 private:
@@ -46,10 +47,11 @@ private:
     QString m_qsMid, m_qsLo, m_qsHi,
             m_qsMidHt, m_qsLoHt, m_qsHiHt,
             m_qsMidHtOut, m_qsLoHtOut, m_qsHiHtOut,
-            m_qsMidHandOut, m_qsLoHandOut, m_qsHiHandOut,
+            m_qsHandOut,
+            m_qsPondID,
             m_qsMidPond, m_qsLoPond, m_qsHiPond,
             m_qsBratDir, m_qsBratName,
-            m_qsPondID;
+            m_qsDamID;
 };
 
 #endif // DAMPOLYGONS_H

@@ -298,30 +298,47 @@ void Raster_BeaverPond::heightAboveNetwork(const char *demPath, const char *fdir
     heightAboveNetwork(fdirPath, facPath, outPath, outPondID);
 }
 
-void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char *fdirPath, const char *facPath, const char *heightPath, const char *outPath, const char *outPondID, const char *outHeight)
+void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char *fdirPath, const char *facPath
+                                                 , const char *heightPathLo, const char *heightPathMid, const char *heightPathHi
+                                                 , const char *outPath, const char *outPondID
+                                                 , const char *outHeightLo, const char *outHeightMid, const char *outHeightHi)
 {
     setProperties(demPath);
 
-    GDALDataset *pDemDS, *pFdirDS, *pFacDS, *pHtInDS, *pHtOutDS, *pOutDS, *pIdDS;
+    GDALDataset *pDemDS, *pFdirDS, *pFacDS, *pOutDS, *pIdDS
+            , *pHtOutLoDS, *pHtOutMidDS, *pHtOutHiDS
+            , *pHtInLoDS, *pHtInMidDS, *pHtInHiDS;
 
     pDemDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pFdirDS = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
     pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
-    pHtInDS = (GDALDataset*) GDALOpen(heightPath, GA_ReadOnly);
+
+    pHtInLoDS = (GDALDataset*) GDALOpen(heightPathLo, GA_ReadOnly);
+    pHtInMidDS = (GDALDataset*) GDALOpen(heightPathMid, GA_ReadOnly);
+    pHtInHiDS = (GDALDataset*) GDALOpen(heightPathHi, GA_ReadOnly);
+
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pIdDS = pDriverTiff->Create(outPondID, nCols, nRows, 1, GDT_Float32, NULL);
-    qDebug()<<"creating output dam height raster";
-    pHtOutDS = pDriverTiff->Create(outHeight, nCols, nRows, 1, GDT_Float32, NULL);
-    qDebug()<<"created";
+
+    pHtOutLoDS = pDriverTiff->Create(outHeightLo, nCols, nRows, 1, GDT_Float32, NULL);
+    pHtOutMidDS = pDriverTiff->Create(outHeightMid, nCols, nRows, 1, GDT_Float32, NULL);
+    pHtOutHiDS = pDriverTiff->Create(outHeightHi, nCols, nRows, 1, GDT_Float32, NULL);
+
     pOutDS->SetGeoTransform(transform);
     pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
     pOutDS->GetRasterBand(1)->Fill(noData);
     pIdDS->SetGeoTransform(transform);
     pIdDS->GetRasterBand(1)->SetNoDataValue(noData);
     pIdDS->GetRasterBand(1)->Fill(noData);
-    pHtOutDS->SetGeoTransform(transform);
-    pHtOutDS->GetRasterBand(1)->SetNoDataValue(noData);
-    pHtOutDS->GetRasterBand(1)->Fill(noData);
+    pHtOutLoDS->SetGeoTransform(transform);
+    pHtOutLoDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pHtOutLoDS->GetRasterBand(1)->Fill(noData);
+    pHtOutMidDS->SetGeoTransform(transform);
+    pHtOutMidDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pHtOutMidDS->GetRasterBand(1)->Fill(noData);
+    pHtOutHiDS->SetGeoTransform(transform);
+    pHtOutHiDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pHtOutHiDS->GetRasterBand(1)->Fill(noData);
     qDebug()<<"datasets all initialized";
 
     int nIndex, startRow, startCol, newRow, newCol;
@@ -331,7 +348,9 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     signed long int *facWin = (signed long int*) CPLMalloc(sizeof(signed long int)*9);
     float *elevValStart = (float*) CPLMalloc(sizeof(float)*1);
     float *elevVal = (float*) CPLMalloc(sizeof(float)*1);
-    float *htVal = (float*) CPLMalloc(sizeof(float)*1);
+    float *htValLo = (float*) CPLMalloc(sizeof(float)*1);
+    float *htValMid = (float*) CPLMalloc(sizeof(float)*1);
+    float *htValHi = (float*) CPLMalloc(sizeof(float)*1);
     float *pondVal = (float*) CPLMalloc(sizeof(float));
 
     qDebug()<<"starting loop";
@@ -388,7 +407,9 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
                 if (write)
                 {
                     pDemDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
-                    pHtInDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, htVal, 1, 1, GDT_Float32, 0, 0);
+                    pHtInLoDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, htValLo, 1, 1, GDT_Float32, 0, 0);
+                    pHtInMidDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, htValMid, 1, 1, GDT_Float32, 0, 0);
+                    pHtInHiDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, htValHi, 1, 1, GDT_Float32, 0, 0);
                     *elevVal = *elevValStart - *elevVal;
                     *pondVal = facWin[nIndex];
                     if (*elevVal < 0 || nIndex == 4)
@@ -397,7 +418,9 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
                     }
                     pOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
                     pIdDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, pondVal, 1, 1, GDT_Float32, 0, 0);
-                    pHtOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, htVal, 1, 1, GDT_Float32, 0, 0);
+                    pHtOutLoDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, htValLo, 1, 1, GDT_Float32, 0, 0);
+                    pHtOutMidDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, htValMid, 1, 1, GDT_Float32, 0, 0);
+                    pHtOutHiDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, htValHi, 1, 1, GDT_Float32, 0, 0);
                     done = true;
                 }
                 nCount++;
@@ -411,15 +434,21 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     CPLFree(elevValStart);
     CPLFree(elevVal);
     CPLFree(pondVal);
-    CPLFree(htVal);
+    CPLFree(htValLo);
+    CPLFree(htValMid);
+    CPLFree(htValHi);
 
     GDALClose(pDemDS);
     GDALClose(pFdirDS);
     GDALClose(pFacDS);
     GDALClose(pOutDS);
     GDALClose(pIdDS);
-    GDALClose(pHtInDS);
-    GDALClose(pHtOutDS);
+    GDALClose(pHtInLoDS);
+    GDALClose(pHtInMidDS);
+    GDALClose(pHtInHiDS);
+    GDALClose(pHtOutLoDS);
+    GDALClose(pHtOutMidDS);
+    GDALClose(pHtOutHiDS);
 }
 
 void Raster_BeaverPond::subtractHAND(const char *endPath, const char *outPath)
