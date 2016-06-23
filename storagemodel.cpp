@@ -4,6 +4,7 @@ StorageModel::StorageModel(const char *bratPath, const char *outPath, const char
 {
     init(bratPath, outPath, demPath, fdirPath, facPath, capacity);
     m_nType = type;
+    qDebug()<<"type"<<m_nType;
 }
 
 void StorageModel::init(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity)
@@ -80,7 +81,7 @@ void StorageModel::run()
 {
     cleanOutDir();
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap);
-    DamPolygons pondPolys(pondPoints, m_nType);
+    DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     //calcFinalWSE(pondPolys);
     ReachLines reachStorage(pondPoints);
 }
@@ -89,7 +90,8 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
 {
     cleanOutDir();
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, 1);
-    DamPolygons pondPolys(pondPoints, m_nType);
+    qDebug()<<"starting pond polys";
+    DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);
     //pondPoints.compareArea(damsIn, csvOut);
 }
@@ -98,7 +100,7 @@ void StorageModel::runFromPointsWithHeights(const char *damsIn, const char *csvO
 {
     cleanOutDir();
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, 2);
-    DamPolygons pondPolys(pondPoints, m_nType);
+    DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);
 }
 

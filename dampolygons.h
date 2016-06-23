@@ -8,7 +8,7 @@ const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
 class DamPolygons
 {
 public:
-    DamPolygons(DamPoints pts, int type);
+    DamPolygons(DamPoints pts, int type, const char *fdirPath);
 
     void init(DamPoints pondPts);
 
@@ -16,6 +16,7 @@ public:
     void loadDriver_GDAL();
     void calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys);
     void createDepthRasters();
+    void createHandInput_ponds(OGRLayer *pPts);
     void createFields(OGRLayer *pLayer);
     void createFields_BRAT(OGRLayer *pLayer);
     void createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys);
@@ -41,10 +42,14 @@ private:
 
     int m_nType;
     double m_maxDist, m_cellWidth, m_cellHeight;
-    const char *m_outDir, *m_demPath, *m_layerName;
+    const char *m_outDir, *m_demPath, *m_layerName, *m_fdirPath;
     QString m_qsMid, m_qsLo, m_qsHi,
+            m_qsMidHt, m_qsLoHt, m_qsHiHt,
+            m_qsMidHtOut, m_qsLoHtOut, m_qsHiHtOut,
+            m_qsMidHandOut, m_qsLoHandOut, m_qsHiHandOut,
             m_qsMidPond, m_qsLoPond, m_qsHiPond,
-            m_qsBratDir, m_qsBratName;
+            m_qsBratDir, m_qsBratName,
+            m_qsPondID;
 };
 
 #endif // DAMPOLYGONS_H

@@ -7,6 +7,7 @@
 #include "geometry.h"
 #include "statistics.h"
 #include "raster.h"
+#include "raster_beaverpond.h"
 
 class DamPoints
 {

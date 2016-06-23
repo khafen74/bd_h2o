@@ -1027,11 +1027,12 @@ double Raster::sampleAlongLine_RasterVal(const char *checkRasPath, double startX
         Geometry::calcCoords(startX, startY, az1, interval*(i+1), newX, newY);
         rasValue = valueAtPoint(newX, newY);
         rasValue2 = rasterValueAtPoint(checkRasPath, newX, newY);
-        if (rasValue2 > 0.0)
+        if (rasValue2 > 0.5)
         {
             reValue = rasValue;
             found = true;
             i = nSamples;
+            x = newX, y = newY;
         }
         if (i==0)
         {
@@ -1049,11 +1050,12 @@ double Raster::sampleAlongLine_RasterVal(const char *checkRasPath, double startX
         Geometry::calcCoords(startX, startY, az2, interval*(i+1), newX, newY);
         rasValue = valueAtPoint(newX, newY);
         rasValue2 = rasterValueAtPoint(checkRasPath, newX, newY);
-        if (rasValue2 > 0.0)
+        if (rasValue2 > 0.5)
         {
             reValue = rasValue;
             found = true;
             i = nSamples;
+            x = newX, y = newY;
         }
         if (rasValue < lowValue && rasValue != noData)
         {

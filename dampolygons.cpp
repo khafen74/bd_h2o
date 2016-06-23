@@ -1,9 +1,11 @@
 #include "dampolygons.h"
 
-DamPolygons::DamPolygons(DamPoints pts, int type)
+DamPolygons::DamPolygons(DamPoints pts, int type, const char *fdirPath)
 {
-    init(pts);
     m_nType = type;
+    m_fdirPath = fdirPath;
+    init(pts);
+    qDebug()<<"type"<<m_nType;
 }
 
 void DamPolygons::init(DamPoints pondPts)
@@ -25,13 +27,22 @@ void DamPolygons::init(DamPoints pondPts)
 
     if (m_nType == 1)
     {
+        qDebug()<<"creating pond polygons";
         createPondPolygons(pPts_lyr, pPoly_lyr);
         calculateWaterDepth(pPts_lyr, pPoly_lyr);
         summarizePondDepths(pPts_lyr);
     }
     else if (m_nType == 2)
     {
-
+        qDebug()<<"creating hand inputs";
+        createHandInput_ponds(pPts_lyr);
+        Raster_BeaverPond raster_bp;
+        qDebug()<<"starting pond HAND";
+        raster_bp.heightAboveNetwork_ponds(m_demPath, m_fdirPath, m_qsPondID.toStdString().c_str(), m_qsHiHt.toStdString().c_str(), m_qsHiHandOut.toStdString().c_str(),m_qsHiPond.toStdString().c_str(), m_qsHiHtOut.toStdString().c_str());
+    }
+    else
+    {
+        qDebug()<<"problem";
     }
 
     OGRDataSource::DestroyDataSource(pOutDs);
@@ -186,6 +197,95 @@ void DamPolygons::createDepthRasters()
     GDALClose(pDemDS);
 }
 
+void DamPolygons::createHandInput_ponds(OGRLayer *pPts)
+{
+    createDepthRasters();
+    loadDriver_GDAL();
+    GDALDataset *pLoHt, *pMidHt, *pHiHt, *pDamID, *pDemDS;
+    double geot[6];
+    qDebug()<<"driver loaded datasets declared";
+
+    pDemDS = (GDALDataset*) GDALOpen(m_demPath, GA_ReadOnly);
+    pDemDS->GetGeoTransform(geot);
+
+    m_cellWidth = geot[1];
+    m_cellHeight = fabs(geot[5]);
+    qDebug()<<"dem loaded geot set";
+
+    pLoHt = m_pDriverTiff->Create(m_qsLoHt.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pLoHt->SetGeoTransform(geot);
+    pLoHt->GetRasterBand(1)->Fill(-9999.0);
+    pLoHt->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    qDebug()<<"lo ht created";
+
+    pMidHt = m_pDriverTiff->Create(m_qsMidHt.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pMidHt->SetGeoTransform(geot);
+    pMidHt->GetRasterBand(1)->Fill(-9999.0);
+    pMidHt->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    qDebug()<<"mid ht created";
+
+    pHiHt = m_pDriverTiff->Create(m_qsHiHt.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pHiHt->SetGeoTransform(geot);
+    pHiHt->GetRasterBand(1)->Fill(-9999.0);
+    pHiHt->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    qDebug()<<"hi ht created";
+
+    pDamID = m_pDriverTiff->Create(m_qsPondID.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
+    pDamID->SetGeoTransform(geot);
+    pDamID->GetRasterBand(1)->Fill(-9999);
+    pDamID->GetRasterBand(1)->SetNoDataValue(-9999);
+    qDebug()<<"dam id created";
+
+    GDALClose(pDemDS);
+    GDALClose(pLoHt);
+    GDALClose(pMidHt);
+    GDALClose(pHiHt);
+    GDALClose(pDamID);
+
+//    signed long int *damIdVal = (signed long int*) CPLMalloc(sizeof(signed long int));
+//    float *loVal = (float*) CPLMalloc(sizeof(float)*1);
+//    float *midVal = (float*) CPLMalloc(sizeof(float)*1);
+//    float *hiVal = (float*) CPLMalloc(sizeof(float)*1);
+
+    double loVal, midVal, hiVal, damID;
+
+    Raster raster;
+
+    int nDams = pPts->GetFeatureCount();
+    qDebug()<<"starting loop"<<nDams;
+
+    for (int i=0; i<nDams; i++)
+    {
+        OGRFeature *pDamFeature;
+        OGRPoint *damPoint;
+
+        pDamFeature = pPts->GetFeature(i);
+        damPoint = (OGRPoint*) pDamFeature->GetGeometryRef();
+        damID = i;
+        loVal = pDamFeature->GetFieldAsDouble("ht_lo");
+        midVal = pDamFeature->GetFieldAsDouble("ht_mid");
+        hiVal = pDamFeature->GetFieldAsDouble("ht_hi");
+        raster.writeCellValue(m_qsLoHt.toStdString().c_str(), damPoint->getX(), damPoint->getY(), loVal);
+        raster.writeCellValue(m_qsMidHt.toStdString().c_str(), damPoint->getX(), damPoint->getY(), midVal);
+        raster.writeCellValue(m_qsHiHt.toStdString().c_str(), damPoint->getX(), damPoint->getY(), hiVal);
+        raster.writeCellValue(m_qsPondID.toStdString().c_str(), damPoint->getX(), damPoint->getY(), damID);
+//        raster.setProperties(m_qsPondID.toStdString().c_str());
+//        int row = raster.getRow(damPoint->getY());
+//        int col = raster.getCol(damPoint->getX());
+//        pDamID->GetRasterBand(1)->RasterIO(GF_Read, col, row, 1, 1, damIdVal, 1, 1, GDT_Int32, 0, 0);
+    }
+
+//    GDALClose(pLoHt);
+//    GDALClose(pMidHt);
+//    GDALClose(pHiHt);
+//    GDALClose(pDamID);
+
+//    CPLFree(damIdVal);
+//    CPLFree(loVal);
+//    CPLFree(midVal);
+//    CPLFree(hiVal);
+}
+
 void DamPolygons::createFields(OGRLayer *pLayer)
 {
     OGRFieldDefn field("brat_ID", OFTInteger);
@@ -331,6 +431,16 @@ void DamPolygons::setRasterPaths()
     m_qsLoPond = dirPath + "/depLoPond.tif";
     m_qsMidPond = dirPath + "/depMidPond.tif";
     m_qsHiPond = dirPath + "/depHiPond.tif";
+    m_qsLoHt = dirPath + "/htLo.tif";
+    m_qsMidHt = dirPath + "/htMid.tif";
+    m_qsHiHt = dirPath + "/htHi.tif";
+    m_qsLoHtOut = dirPath + "/htLoOut.tif";
+    m_qsMidHtOut = dirPath + "/htMidOut.tif";
+    m_qsHiHtOut = dirPath + "/htHiOut.tif";
+    m_qsLoHandOut = dirPath + "/htLoHandOut.tif";
+    m_qsMidHandOut = dirPath + "/htMidHandOut.tif";
+    m_qsHiHandOut = dirPath + "/htHiHandOut.tif";
+    m_qsPondID = dirPath + "/damID.tif";
 }
 
 void DamPolygons::summarizePondDepths(OGRLayer *pPts)

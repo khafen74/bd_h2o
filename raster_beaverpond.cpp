@@ -309,8 +309,10 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
     pHtInDS = (GDALDataset*) GDALOpen(heightPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
-    pIdDS = pDriverTiff->Create(outPondID, nCols, nRows, 1, GDT_Int32, NULL);
+    pIdDS = pDriverTiff->Create(outPondID, nCols, nRows, 1, GDT_Float32, NULL);
+    qDebug()<<"creating output dam height raster";
     pHtOutDS = pDriverTiff->Create(outHeight, nCols, nRows, 1, GDT_Float32, NULL);
+    qDebug()<<"created";
     pOutDS->SetGeoTransform(transform);
     pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
     pOutDS->GetRasterBand(1)->Fill(noData);
@@ -320,6 +322,7 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     pHtOutDS->SetGeoTransform(transform);
     pHtOutDS->GetRasterBand(1)->SetNoDataValue(noData);
     pHtOutDS->GetRasterBand(1)->Fill(noData);
+    qDebug()<<"datasets all initialized";
 
     int nIndex, startRow, startCol, newRow, newCol;
     QVector<QString> indices;
@@ -329,10 +332,12 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     float *elevValStart = (float*) CPLMalloc(sizeof(float)*1);
     float *elevVal = (float*) CPLMalloc(sizeof(float)*1);
     float *htVal = (float*) CPLMalloc(sizeof(float)*1);
-    signed long int *pondVal = (signed long int*) CPLMalloc(sizeof(signed long int));
+    float *pondVal = (float*) CPLMalloc(sizeof(float));
 
+    qDebug()<<"starting loop";
     for (int i=1; i<nRows-1; i++)
     {
+        qDebug()<<"row"<<i+1<<"of"<<nRows;
         for (int j=1; j<nCols-1; j++)
         {
             pDemDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, elevValStart, 1, 1, GDT_Float32, 0, 0);
@@ -391,7 +396,7 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
                         *elevVal = noData;
                     }
                     pOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
-                    pIdDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, pondVal, 1, 1, GDT_Int32, 0, 0);
+                    pIdDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, pondVal, 1, 1, GDT_Float32, 0, 0);
                     pHtOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, htVal, 1, 1, GDT_Float32, 0, 0);
                     done = true;
                 }
