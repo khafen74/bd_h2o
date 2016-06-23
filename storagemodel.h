@@ -8,7 +8,7 @@
 class StorageModel
 {
 public:
-    StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity);
+    StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type);
 
     void init(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity);
 
@@ -27,6 +27,7 @@ private:
     QString m_absPath;
     QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths, m_qvHandIn, m_qvGWPondID, m_qvGWChange;
     double bratCap;
+    int m_nType;
 };
 
 #endif // STORAGEMODEL_H

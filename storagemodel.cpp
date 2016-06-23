@@ -1,8 +1,9 @@
 #include "storagemodel.h"
 
-StorageModel::StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity)
+StorageModel::StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type)
 {
     init(bratPath, outPath, demPath, fdirPath, facPath, capacity);
+    m_nType = type;
 }
 
 void StorageModel::init(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity)
@@ -78,12 +79,9 @@ void StorageModel::createHandInputs()
 void StorageModel::run()
 {
     cleanOutDir();
-    qDebug()<<"creating dam points";
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap);
-    qDebug()<<"creating pond polygons";
-    DamPolygons pondPolys(pondPoints);
+    DamPolygons pondPolys(pondPoints, m_nType);
     //calcFinalWSE(pondPolys);
-    qDebug()<<"calculating reach storage";
     ReachLines reachStorage(pondPoints);
 }
 
@@ -91,7 +89,7 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
 {
     cleanOutDir();
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, 1);
-    DamPolygons pondPolys(pondPoints);
+    DamPolygons pondPolys(pondPoints, m_nType);
     ReachLines reachStorage(pondPoints);
     //pondPoints.compareArea(damsIn, csvOut);
 }
@@ -100,7 +98,7 @@ void StorageModel::runFromPointsWithHeights(const char *damsIn, const char *csvO
 {
     cleanOutDir();
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, 2);
-    DamPolygons pondPolys(pondPoints);
+    DamPolygons pondPolys(pondPoints, m_nType);
     ReachLines reachStorage(pondPoints);
 }
 

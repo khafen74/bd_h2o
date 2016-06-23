@@ -1,8 +1,9 @@
 #include "dampolygons.h"
 
-DamPolygons::DamPolygons(DamPoints pts)
+DamPolygons::DamPolygons(DamPoints pts, int type)
 {
     init(pts);
+    m_nType = type;
 }
 
 void DamPolygons::init(DamPoints pondPts)
@@ -22,9 +23,16 @@ void DamPolygons::init(DamPoints pondPts)
     pPts_lyr = pOutDs->GetLayerByName(pondPts.getLayerName());
     pPoly_lyr = pOutDs->CreateLayer(m_layerName, pPts_lyr->GetSpatialRef(), wkbPolygon, NULL);
 
-    createPondPolygons(pPts_lyr, pPoly_lyr);
-    calculateWaterDepth(pPts_lyr, pPoly_lyr);
-    summarizePondDepths(pPts_lyr);
+    if (m_nType == 1)
+    {
+        createPondPolygons(pPts_lyr, pPoly_lyr);
+        calculateWaterDepth(pPts_lyr, pPoly_lyr);
+        summarizePondDepths(pPts_lyr);
+    }
+    else if (m_nType == 2)
+    {
+
+    }
 
     OGRDataSource::DestroyDataSource(pOutDs);
 }

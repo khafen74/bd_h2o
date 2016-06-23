@@ -8,7 +8,7 @@ const double ANGLE_OFFSET[5] = {-90.0, -45.0, 0.0, 45.0, 90.0};
 class DamPolygons
 {
 public:
-    DamPolygons(DamPoints pts);
+    DamPolygons(DamPoints pts, int type);
 
     void init(DamPoints pondPts);
 
@@ -39,6 +39,7 @@ private:
     OGRSFDriver *m_pDriverShp;
     GDALDriver *m_pDriverTiff;
 
+    int m_nType;
     double m_maxDist, m_cellWidth, m_cellHeight;
     const char *m_outDir, *m_demPath, *m_layerName;
     QString m_qsMid, m_qsLo, m_qsHi,

@@ -15,6 +15,7 @@ public:
     void flowDownstream(const char *gwPath, const char *fdirPath, const char *facPath, const char *demPath, const char *pidPath, const char *gwePath, const char *outPath);
     void heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID);
     void heightAboveNetwork(const char *demPath, const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID);
+    void heightAboveNetwork_ponds(const char *demPath, const char *fdirPath, const char *facPath, const char *heightPath, const char *outPath, const char *outPondID, const char *outHeight);
     void subtractHAND(const char *endPath, const char *outPath);
     void subtractHAND(const char *startPath, const char *endPath, const char *outPath);
     //void waterSurfaceElevation(const char *sourcePath, const char *waterDepth, const char *outPath);

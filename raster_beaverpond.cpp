@@ -298,6 +298,125 @@ void Raster_BeaverPond::heightAboveNetwork(const char *demPath, const char *fdir
     heightAboveNetwork(fdirPath, facPath, outPath, outPondID);
 }
 
+void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char *fdirPath, const char *facPath, const char *heightPath, const char *outPath, const char *outPondID, const char *outHeight)
+{
+    setProperties(demPath);
+
+    GDALDataset *pDemDS, *pFdirDS, *pFacDS, *pHtInDS, *pHtOutDS, *pOutDS, *pIdDS;
+
+    pDemDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
+    pFdirDS = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
+    pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
+    pHtInDS = (GDALDataset*) GDALOpen(heightPath, GA_ReadOnly);
+    pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pIdDS = pDriverTiff->Create(outPondID, nCols, nRows, 1, GDT_Int32, NULL);
+    pHtOutDS = pDriverTiff->Create(outHeight, nCols, nRows, 1, GDT_Float32, NULL);
+    pOutDS->SetGeoTransform(transform);
+    pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pOutDS->GetRasterBand(1)->Fill(noData);
+    pIdDS->SetGeoTransform(transform);
+    pIdDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pIdDS->GetRasterBand(1)->Fill(noData);
+    pHtOutDS->SetGeoTransform(transform);
+    pHtOutDS->GetRasterBand(1)->SetNoDataValue(noData);
+    pHtOutDS->GetRasterBand(1)->Fill(noData);
+
+    int nIndex, startRow, startCol, newRow, newCol;
+    QVector<QString> indices;
+    bool done, write;
+    unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
+    signed long int *facWin = (signed long int*) CPLMalloc(sizeof(signed long int)*9);
+    float *elevValStart = (float*) CPLMalloc(sizeof(float)*1);
+    float *elevVal = (float*) CPLMalloc(sizeof(float)*1);
+    float *htVal = (float*) CPLMalloc(sizeof(float)*1);
+    signed long int *pondVal = (signed long int*) CPLMalloc(sizeof(signed long int));
+
+    for (int i=1; i<nRows-1; i++)
+    {
+        for (int j=1; j<nCols-1; j++)
+        {
+            pDemDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, elevValStart, 1, 1, GDT_Float32, 0, 0);
+            startRow = i, startCol = j, newRow = i, newCol = j;
+
+            done = false, write = false;
+            int nCount = 0;
+            while (!done && nCount<2500)
+            {
+                indices.clear();
+                pFdirDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+                pFacDS->GetRasterBand(1)->RasterIO(GF_Read, newCol-1, newRow-1, 3, 3, facWin, 3, 3, GDT_Int32, 0, 0);
+
+                if (facWin[4] >= -1)
+                {
+                    //make true if you want to inundate the cell(s) marking dam location
+                    write = false;
+                    nIndex = 4;
+                }
+                else if (fdirWin[4] > 0)
+                {
+                    nIndex = getD8Index(fdirWin[4]);
+
+                    if (checkRowCol(newRow+ROW_OFFSET[nIndex], newCol+COL_OFFSET[nIndex]))
+                    {
+                        indices.append(QString::number(newRow) + " "+ QString::number(newCol));
+                        newRow += ROW_OFFSET[nIndex], newCol += COL_OFFSET[nIndex];
+                        if (indices.indexOf(QString::number(newRow) + " " + QString::number(newCol)) != -1)
+                        {
+                            qDebug()<<"matching index";
+                            done = true;
+                        }
+                        if (facWin[nIndex] > -1)
+                        {
+                            write = true;
+                        }
+                    }
+                    else
+                    {
+                        done = true;
+                    }
+                }
+                else
+                {
+                    done = true;
+                }
+
+                if (write)
+                {
+                    pDemDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
+                    pHtInDS->GetRasterBand(1)->RasterIO(GF_Read, newCol, newRow, 1, 1, htVal, 1, 1, GDT_Float32, 0, 0);
+                    *elevVal = *elevValStart - *elevVal;
+                    *pondVal = facWin[nIndex];
+                    if (*elevVal < 0 || nIndex == 4)
+                    {
+                        *elevVal = noData;
+                    }
+                    pOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, elevVal, 1, 1, GDT_Float32, 0, 0);
+                    pIdDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, pondVal, 1, 1, GDT_Int32, 0, 0);
+                    pHtOutDS->GetRasterBand(1)->RasterIO(GF_Write, startCol, startRow, 1, 1, htVal, 1, 1, GDT_Float32, 0, 0);
+                    done = true;
+                }
+                nCount++;
+            }
+        }
+    }
+
+
+    CPLFree(fdirWin);
+    CPLFree(facWin);
+    CPLFree(elevValStart);
+    CPLFree(elevVal);
+    CPLFree(pondVal);
+    CPLFree(htVal);
+
+    GDALClose(pDemDS);
+    GDALClose(pFdirDS);
+    GDALClose(pFacDS);
+    GDALClose(pOutDS);
+    GDALClose(pIdDS);
+    GDALClose(pHtInDS);
+    GDALClose(pHtOutDS);
+}
+
 void Raster_BeaverPond::subtractHAND(const char *endPath, const char *outPath)
 {
     GDALDataset *pSourceDS, *pEndDs, *pOutDS;

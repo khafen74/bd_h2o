@@ -134,7 +134,7 @@ int run()
     const char *heightOut10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/hand10m.tif";
     const char *test10m = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/z_TestRuns/03_shpOut/test.tif";
 
-    StorageModel model(shpIn, shpOut, demIn10m, fdir10m, fac10m, 0.5);
+    StorageModel model(shpIn, shpOut, demIn10m, fdir10m, fac10m, 0.5, 1);
     model.run();
 
     //StorageModel model(shpIn, shpOut, demIn10m_clip, fdir10m_clip, fac10m_clip, 0.5);
@@ -175,7 +175,7 @@ int validate()
 //    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_1m/01_shpIn/DamArea_BRAT_joined.shp";
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_1m/03_out/comparison.csv";
 
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 1);
     //model.run();
     model.runFromPoints(damsPath, csvPath);
     //model.runFromPointsWithHeights(damsPath,csvPath);
@@ -191,7 +191,7 @@ int pataha()
     const char *fdir = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/Pataha/Inputs/ModelIn/fdir_10m.tif";
     const char *fac = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/Pataha/Inputs/ModelIn/fac_10m.tif";
 
-    StorageModel model(shpIn, shpOut, demIn, fdir, fac, 0.5);
+    StorageModel model(shpIn, shpOut, demIn, fdir, fac, 0.5, 1);
     model.run();
 
     return 0;
