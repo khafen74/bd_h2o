@@ -99,8 +99,10 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
     int pondID;
     double lo, mid, hi, gelev, demVal, depValNew;
 
+    qDebug()<<"pond polys"<<nPonds;
     for (int i=0; i<nPonds; i++)
     {
+        qDebug()<<"calculating depth for pond"<<i<<"of"<<nPonds;
         OGRFeature *pDamFeat, *pPolyFeat;
         pPolyFeat = pPolys->GetFeature(i);
         pPolygon = (OGRPolygon*) pPolyFeat->GetGeometryRef();
@@ -344,6 +346,7 @@ void DamPolygons::createPondPolygons(OGRLayer *pPts, OGRLayer *pPolys)
     int nDams = pPts->GetFeatureCount();
     createFields(pPolys);
 
+    qDebug()<<"dams"<<nDams;
     for (int i=0; i<nDams; i++)
     {
         OGRFeature *pDamFeature;

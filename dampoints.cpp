@@ -225,6 +225,7 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
 
     for (int i=0; i<nFeatures; i++)
     {
+        qDebug()<<"creating dam"<<i+1<<"of"<<nFeatures;
         pOldFeat = pExLyr->GetFeature(i);
         int nBratFID = pOldFeat->GetFieldAsInteger("ID");
         pBratFeat = pBratLyr->GetFeature(nBratFID);
