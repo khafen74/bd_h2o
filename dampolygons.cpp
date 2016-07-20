@@ -25,6 +25,7 @@ void DamPolygons::init(DamPoints pondPts)
     pPts_lyr = pOutDs->GetLayerByName(pondPts.getLayerName());
     pPoly_lyr = pOutDs->CreateLayer(m_layerName, pPts_lyr->GetSpatialRef(), wkbPolygon, NULL);
 
+    //determine maximum pond extent by polygon
     if (m_nType == 1)
     {
         qDebug()<<"creating pond polygons";
@@ -32,6 +33,7 @@ void DamPolygons::init(DamPoints pondPts)
         calculateWaterDepth(pPts_lyr, pPoly_lyr);
         summarizePondDepths(pPts_lyr);
     }
+    //determine maximum pond extent by flow direction algebra
     else if (m_nType == 2)
     {
         qDebug()<<"creating hand inputs";

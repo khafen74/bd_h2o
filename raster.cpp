@@ -8,7 +8,7 @@ Raster::Raster()
 void Raster::add(const char *addPath, const char *outPath)
 {
     GDALDataset *pSourceDS, *pAddDs, *pOutDS;
-
+    //qDebug()<<m_rasterPath<<addPath<<outPath;
     pSourceDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pAddDs = (GDALDataset*) GDALOpen(addPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
@@ -16,9 +16,9 @@ void Raster::add(const char *addPath, const char *outPath)
     pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
     pOutDS->GetRasterBand(1)->Fill(noData);
 
-    float *srcRow = (float*) CPLMalloc(sizeof(float)*nRows);
-    float *addRow = (float*) CPLMalloc(sizeof(float)*nRows);
-    float *outRow = (float*) CPLMalloc(sizeof(float)*nRows);
+    float *srcRow = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *addRow = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *outRow = (float*) CPLMalloc(sizeof(float)*nCols);
 
     for (int i=0; i<nRows; i++)
     {
@@ -1340,6 +1340,44 @@ double Raster::sum(const char *rasterPath)
     dSum = sum();
 
     return dSum;
+}
+
+void Raster::toXYZ(const char *rasterPath, const char *xyzPath)
+{
+    setProperties(rasterPath);
+
+    GDALDataset *pRaster;
+    pRaster = (GDALDataset*) GDALOpen(rasterPath, GA_ReadOnly);
+
+    double xtlCenter, ytlCenter, xCenter, yCenter;
+
+    xtlCenter = transform[0] + (transform[1]/2.0);
+    ytlCenter = transform[3] + (fabs(transform[5])/2.0);
+
+    float *read = (float*) CPLMalloc(sizeof(float)*1);
+
+    QFile fout(xyzPath);
+    fout.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream out(&fout);
+    out.setRealNumberNotation(QTextStream::FixedNotation);
+
+    for (int i=0; i<nRows; i++)
+    {
+        yCenter = ytlCenter + (i*fabs(transform[5]));
+        for (int j=0; j<nCols; j++)
+        {
+            pRaster->GetRasterBand(1)->RasterIO(GF_Read,j,i,1,1,read,1,1,GDT_Float32,0,0);
+            if (*read != noData)
+            {
+                xCenter = xtlCenter + (j*transform[1]);
+                out.setRealNumberPrecision(5);
+                out << xCenter << "\t" <<yCenter << "\t" << *read <<"\n";
+            }
+        }
+    }
+    fout.close();
+    CPLFree(read);
+    GDALClose(pRaster);
 }
 
 void Raster::translateToGeoTIFF(const char *inPath, const char *outPath)

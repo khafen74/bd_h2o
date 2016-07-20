@@ -67,6 +67,7 @@ public:
     void subtract(const char *sourcePath, const char *subtractPath, const char *outputPath);
     double sum();
     double sum(const char *rasterPath);
+    void toXYZ(const char *rasterPath, const char *xyzPath);
     void translateToGeoTIFF(const char *inPath, const char *outPath);
     double valueAtPoint(double xCoord, double yCoord);
     double valueAtPoint(const char *rasterPath, double xCoord, double yCoord);

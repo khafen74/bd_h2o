@@ -21,7 +21,9 @@ public:
     void compareArea(const char *damsIn, const char *csvOut);
     void createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
     void createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
+    void createDamPoints_CopyLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
+    void createDamPoints_HeightsLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createFields(OGRLayer *pLayer);
     QString getBratDir();
     QString getBratName();

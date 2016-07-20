@@ -16,15 +16,16 @@ public:
     void calcWSEChange();
     void cleanOutDir();
     void createHandInputs();
+    void createModflowInputs(DamPolygons pondExtents);
     void run();
-    void runFromPoints(const char *damsIn, const char *csvOut);
+    void runFromPoints(const char *damsIn, const char *csvOut, int nRunType=1);
     void runFromPointsWithHeights(const char *damsIn, const char *csvOut);
     void setOutputPaths(DamPolygons pondExtents);
 
 private:
     const char *m_bratPath, *m_outPath, *m_demPath, *m_fdirPath, *m_facPath;
     QString m_absPath;
-    QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths, m_qvHandIn, m_qvGWPondID, m_qvGWChange;
+    QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths, m_qvHandIn, m_qvGWPondID, m_qvGWChange, m_qvHead;
     double bratCap;
     int m_nType;
 };

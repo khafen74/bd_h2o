@@ -11,6 +11,7 @@ public:
 
     void groundwaterDepth(const char *startDepth, const char *newDepth, const char *outPath);
     void createHANDInput(const char *pondPath, const char *facPath, const char *outPath);
+    void head(const char *demPath, const char *wetPath, const char *outPath);
     void flowDownstream(const char *fdirPath, const char *facPath, const char *demPath, const char *pidPath, const char *gwePath, const char *outPath);
     void flowDownstream(const char *gwPath, const char *fdirPath, const char *facPath, const char *demPath, const char *pidPath, const char *gwePath, const char *outPath);
     void heightAboveNetwork(const char *fdirPath, const char *facPath, const char *outPath, const char *outPondID);

@@ -8,6 +8,7 @@ int run();
 int validate();
 int pataha();
 int testStats();
+int runXYZ();
 
 int main(int argc, char *argv[])
 {
@@ -18,6 +19,7 @@ int main(int argc, char *argv[])
     //test();
     validate();
     //testStats();
+    //runXYZ();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -157,6 +159,15 @@ int validate()
 //    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m/01_shpIn/dams_brat_join.shp";
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m/03_out/comparison.csv";
 
+    //Ogden NF 1m inputs - preserve dam location
+//    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m_DamLoc/01_shpIn/brat.shp";
+//    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m_DamLoc/02_rasIn/fil1m_vb.tif";
+//    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m_DamLoc/02_rasIn/fdir1m_vb.tif";
+//    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m_DamLoc/02_rasIn/fac1m_500000_vb.tif";
+//    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m_DamLoc/03_out";
+//    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m_DamLoc/01_shpIn/dams_brat_join.shp";
+//    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_1m_DamLoc/03_out/comparison.csv";
+
     //Ogden NF 10m inputs
 //    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m/01_shpIn/brat.shp";
 //    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m/02_rasIn/fil10m_vb.tif";
@@ -166,14 +177,23 @@ int validate()
 //    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m/01_shpIn/dams_brat_join.shp";
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m/03_out/comparison.csv";
 
+    //Ogden NF 10m inputs - preserve dam location
+//    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m_DamLoc/01_shpIn/brat.shp";
+//    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m_DamLoc/02_rasIn/fil10m_vb.tif";
+//    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m_DamLoc/02_rasIn/fdir10m_vb.tif";
+//    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m_DamLoc/02_rasIn/fac10m_5000_vb.tif";
+//    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m_DamLoc/03_out";
+//    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m_DamLoc/01_shpIn/dams_brat_join.shp";
+//    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/OgdenNF_10m_DamLoc/03_out/comparison.csv";
+
     //Santa Clara 1m inputs
-    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/01_shpIn/brat.shp";
-    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/02_rasIn/fil1m_vb.tif";
-    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/02_rasIn/fdir1m_vb.tif";
-    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/02_rasIn/fac1m_4000000_vb.tif";
-    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/03_out";
-    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/01_shpIn/dams_20160629.shp";
-    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/03_out/comparison.csv";
+//    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/01_shpIn/brat.shp";
+//    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/02_rasIn/fil1m_vb.tif";
+//    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/02_rasIn/fdir1m_vb.tif";
+//    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/02_rasIn/fac1m_4000000_vb.tif";
+//    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/03_out";
+//    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/01_shpIn/dams_20160629.shp";
+//    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/SantaClara_1m/03_out/comparison.csv";
 
     //Farmington 3m inputs
 //    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Farmington_3m/01_shpIn/brat.shp";
@@ -211,6 +231,15 @@ int validate()
 //    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m/03_out/comparison.csv";
 
+    //Temple Fork 10m inputs, MODFLOW test
+    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/01_shpIn/BRAT_TempleFk_WS.shp";
+    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fil10m_vb.tif";
+    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fdir10m_vb.tif";
+    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fac_1300_vb.tif";
+    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/03_out";
+    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/01_shpIn/DamArea_BRAT_joined.shp";
+    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/03_out/comparison.csv";
+
     //Temple Fork 1m inputs
 //    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_1m/01_shpIn/BRAT_TempleFk_WS.shp";
 //    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_1m/02_rasIn/fil1m_vb.tif";
@@ -225,7 +254,7 @@ int validate()
 //    raster.setNoData(fdirPath, 0, 1, 200);
 //    raster.setNoData(facPath, -1, 1, 2);
 
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 2);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 1);
     //model.runFromPoints(damsPath, csvPath);
     model.runFromPoints(damsPath, csvPath);
     //model.runFromPointsWithHeights(damsPath,csvPath);
@@ -263,6 +292,20 @@ int testStats()
     }
 
     file.close();
+
+    return 0;
+}
+
+int runXYZ()
+{
+    const char *elev = "E:/etal/Projects/NonLoc/BeaverModeling/08_MODFLOW/tf_10m/01_Inputs/fil10m.tif";
+    const char *elev_xyz = "E:/etal/Projects/NonLoc/BeaverModeling/08_MODFLOW/tf_10m/01_Inputs/dem.xyz";
+    const char *head = "E:/etal/Projects/NonLoc/BeaverModeling/08_MODFLOW/tf_10m/01_Inputs/head.tif";
+    const char *head_xyz = "E:/etal/Projects/NonLoc/BeaverModeling/08_MODFLOW/tf_10m/01_Inputs/head.xyz";
+
+    Raster raster;
+    raster.toXYZ(elev, elev_xyz);
+    raster.toXYZ(head, head_xyz);
 
     return 0;
 }

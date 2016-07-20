@@ -77,6 +77,22 @@ void StorageModel::createHandInputs()
     }
 }
 
+void StorageModel::createModflowInputs(DamPolygons pondExtents)
+{
+    setOutputPaths(pondExtents);
+    qDebug()<<"creating modflow inputs";
+    calcSurfaceWSE();
+    qDebug()<<"surface wse created";
+    Raster_BeaverPond raster_bp;
+    qDebug()<<"starting head calculations";
+    raster_bp.head(m_demPath, m_facPath, m_qvHead[0].toStdString().c_str());
+    qDebug()<<"starting loop";
+    for (int i=0; i<m_qvSurfaceWSEPaths.length(); i++)
+    {
+        raster_bp.head(m_qvSurfaceWSEPaths[i].toStdString().c_str(), m_qvPondPaths[i].toStdString().c_str(), m_qvHead[i+1].toStdString().c_str());
+    }
+}
+
 void StorageModel::run()
 {
     cleanOutDir();
@@ -84,29 +100,45 @@ void StorageModel::run()
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     //calcFinalWSE(pondPolys);
     ReachLines reachStorage(pondPoints);
+    //setOutputPaths(pondPolys);
+    createModflowInputs(pondPolys);
 }
 
-void StorageModel::runFromPoints(const char *damsIn, const char *csvOut)
+void StorageModel::runFromPoints(const char *damsIn, const char *csvOut, int nRunType)
 {
     cleanOutDir();
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, 1);
+    if (nRunType == 2)
+    {
+        m_nType = 2;
+    }
+    qDebug()<<"starting dam points";
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, nRunType);
     qDebug()<<"starting pond polys";
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);
+    createModflowInputs(pondPolys);
     //pondPoints.compareArea(damsIn, csvOut);
 }
 
 void StorageModel::runFromPointsWithHeights(const char *damsIn, const char *csvOut)
 {
     cleanOutDir();
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, 2);
+    int nDamRunType = 4;
+    if (nDamRunType == 4)
+    {
+        m_nType = 2;
+    }
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, nDamRunType);
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);
+    setOutputPaths(pondPolys);
+    createModflowInputs(pondPolys);
 }
 
 void StorageModel::setOutputPaths(DamPolygons pondExtents)
 {
-    m_qvPondPaths.clear(), m_qvSurfaceDepthPaths.clear(), m_qvSurfaceWSEPaths.clear(), m_qvWSEPaths.clear(), m_qvHandIn.clear(), m_qvGWPondID.clear(), m_qvGWChange.clear();
+    m_qvPondPaths.clear(), m_qvSurfaceDepthPaths.clear(), m_qvSurfaceWSEPaths.clear(), m_qvWSEPaths.clear()
+            , m_qvHandIn.clear(), m_qvGWPondID.clear(), m_qvGWChange.clear(), m_qvHead.clear();
     m_qvPondPaths.append(pondExtents.getLoPondPath()), m_qvPondPaths.append(pondExtents.getMidPondPath()), m_qvPondPaths.append(pondExtents.getHiPondPath());
     m_qvSurfaceDepthPaths.append(pondExtents.getLoDepthPath()), m_qvSurfaceDepthPaths.append(pondExtents.getMidDepthPath()), m_qvSurfaceDepthPaths.append(pondExtents.getHiDepthPath());
     QFileInfo fi(pondExtents.getHiDepthPath());
@@ -117,4 +149,6 @@ void StorageModel::setOutputPaths(DamPolygons pondExtents)
     m_qvHandIn.append(absPath+"/HAND_lo.tif"), m_qvHandIn.append(absPath+"/HAND_mid.tif"), m_qvHandIn.append(absPath+"/HAND_hi.tif");
     m_qvGWPondID.append(absPath+"/GWPondID_lo.tif"),  m_qvGWPondID.append(absPath+"/GWPondID_mid.tif"),  m_qvGWPondID.append(absPath+"/GWPondID_hi.tif");
     m_qvGWChange.append(absPath+"/WSEChange_lo.tif"), m_qvGWChange.append(absPath+"/WSEChange_mid.tif"), m_qvGWChange.append(absPath+"/WSEChange_hi.tif");
+    m_qvHead.append(absPath+"/head_start.tif"), m_qvHead.append(absPath+"/head_lo.tif"), m_qvHead.append(absPath+"/head_mid.tif")
+            , m_qvHead.append(absPath+"/head_hi.tif");
 }

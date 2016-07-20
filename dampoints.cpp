@@ -73,7 +73,15 @@ void DamPoints::init(const char *bratPath, const char *exPath, int type)
     }
     else if (type == 2)
     {
+        createDamPoints_CopyLoc(pBratIn, pDamsOut, pDamsIn);
+    }
+    else if (type == 3)
+    {
         createDamPoints_Heights(pBratIn, pDamsOut, pDamsIn);
+    }
+    else if (type == 4)
+    {
+        createDamPoints_HeightsLoc(pBratIn, pDamsOut, pDamsIn);
     }
 
     OGRDataSource::DestroyDataSource(pInDs);
@@ -213,6 +221,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
     OGRFeature::DestroyFeature(pBratFeat);
 }
 
+//Create dam points to model from dams with measured heights. Modeled dam points moved to flow accumulation raster
 void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
 {
     const char *slopeField = "iGeo_Slope";
@@ -222,7 +231,6 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
     Raster raster_dem;
     int nPrimary = 0, nSecondary = 0;
     int nFeatures = pExLyr->GetFeatureCount();
-
     for (int i=0; i<nFeatures; i++)
     {
         qDebug()<<"creating dam"<<i+1<<"of"<<nFeatures;
@@ -279,6 +287,75 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
     OGRFeature::DestroyFeature(pOldFeat);
 }
 
+//Create dam points to model at same location as input dam points. If dam extents created wtih polygons output will have errors
+void DamPoints::createDamPoints_CopyLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
+{
+    const char *slopeField = "iGeo_Slope";
+    //double sampleDist = 50.0;
+    OGRFeature *pBratFeat, *pOldFeat;
+    OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsLyr->GetLayerDefn());
+    Raster raster_dem;
+    int nPrimary = 0, nSecondary = 0;
+    int nFeatures = pExLyr->GetFeatureCount();
+
+    for (int i=0; i<nFeatures; i++)
+    {
+        qDebug()<<"creating dam"<<i+1<<"of"<<nFeatures;
+        pOldFeat = pExLyr->GetFeature(i);
+        int nBratFID = pOldFeat->GetFieldAsInteger("ID");
+        pBratFeat = pBratLyr->GetFeature(nBratFID);
+        double slope = pBratFeat->GetFieldAsDouble(slopeField);
+        OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
+        OGRLineString *pBratLine = (OGRLineString*) pGeom;
+        pGeom = pOldFeat->GetGeometryRef();
+        OGRPoint *pOldDam = (OGRPoint*) pGeom;
+        //double az = Geometry::calcAzimuth(pBratLine->getX(pBratLine->getNumPoints()-1), pBratLine->getY(pBratLine->getNumPoints()-1), pBratLine->getX(0), pBratLine->getY(0));
+        double rnum = ((double) rand() / (RAND_MAX));
+        double dht;
+        Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.93, 0.17), RDT_norm);
+        dht = Random::random_normal(0.92, 0.17);
+        if (rnum <= 0.15)
+        {
+            normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.16, 0.20));
+            dht = Random::random_normal(1.16, 0.2);
+            nPrimary++;
+            //qDebug()<<"primary"<<rnum;
+        }
+        else
+        {
+            nSecondary++;
+            //qDebug()<<"secondary"<<rnum;
+        }
+
+        //double x = pOldDam->getX();
+        //double y = pOldDam->getY();
+        //double elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pOldDam->getX(), pOldDam->getY(), az, sampleDist, x, y);
+        //double elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pOldDam->getX(), pOldDam->getY(), az, sampleDist, x, y);
+        //pOldDam->setX(x);
+        //pOldDam->setY(y);
+        double elev = raster_dem.valueAtPoint(m_demPath, pOldDam->getX(), pOldDam->getY());
+        setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(pOldDam->getX(), pOldDam->getY(), pBratLine->getX(0), pBratLine->getY(0)), pOldDam->getX(), pOldDam->getY());
+        double loHt, midHt, hiHt, maxHt;
+        loHt = normDist.getQuantile(0.025), midHt = normDist.getQuantile(0.5), hiHt = normDist.getQuantile(0.975), maxHt = VectorOps::max(normDist.getData());
+        //setDamHeights(pDamFeat, dht*dht, dht*dht, dht*dht, dht*dht);
+        setDamHeights(pDamFeat, loHt*loHt, midHt*midHt, hiHt*hiHt, maxHt*maxHt);
+        //setDamHeights(pDamFeat, normDist.getQuantile(0.025), normDist.getQuantile(0.5), normDist.getQuantile(0.975), VectorOps::max(normDist.getData()));
+        //qDebug()<<loHt*loHt<<midHt*midHt<<hiHt*hiHt;
+        //qDebug()<<"brat id"<<nBratFID;
+
+        pDamFeat->SetGeometry(pOldDam);
+        if (elev > 0.0)
+        {
+            pDamsLyr->CreateFeature(pDamFeat);
+        }
+    }
+    qDebug()<<"primary"<<nPrimary<<"secondary"<<nSecondary;
+    OGRFeature::DestroyFeature(pDamFeat);
+    OGRFeature::DestroyFeature(pBratFeat);
+    OGRFeature::DestroyFeature(pOldFeat);
+}
+
+//Create dam points to model from dams with measured heights. Modeled dam points moved to flow accumulation raster
 void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
 {
     const char *slopeField = "iGeo_Slope";
@@ -308,6 +385,52 @@ void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, 
         pOldDam->setY(y);
         setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(pOldDam->getX(), pOldDam->getY(), pBratLine->getX(0), pBratLine->getY(0)), x, y);
         setDamHeights(pDamFeat, damHeight, damHeight, damHeight, damHeight);
+
+        pDamFeat->SetGeometry(pOldDam);
+        if (elev > 0.0)
+        {
+            pDamsLyr->CreateFeature(pDamFeat);
+        }
+    }
+
+    OGRFeature::DestroyFeature(pDamFeat);
+    OGRFeature::DestroyFeature(pBratFeat);
+    OGRFeature::DestroyFeature(pOldFeat);
+}
+
+//Create dam points to model with measure heights at same location as input dam points. If dam extents created wtih polygons output will have errors
+void DamPoints::createDamPoints_HeightsLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
+{
+    qDebug()<<"Dam points with heights, preserve original location";
+    const char *slopeField = "iGeo_Slope";
+    //double sampleDist = 50.0;
+    OGRFeature *pBratFeat, *pOldFeat;
+    OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsLyr->GetLayerDefn());
+    Raster raster_dem;
+    int nFeatures = pExLyr->GetFeatureCount();
+
+    for (int i=0; i<nFeatures; i++)
+    {
+        pOldFeat = pExLyr->GetFeature(i);
+        int nBratFID = pOldFeat->GetFieldAsInteger("ID");
+        double damHeight = pOldFeat->GetFieldAsDouble("DamHt_m");
+        pBratFeat = pBratLyr->GetFeature(nBratFID);
+        double slope = pBratFeat->GetFieldAsDouble(slopeField);
+        OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
+        OGRLineString *pBratLine = (OGRLineString*) pGeom;
+        pGeom = pOldFeat->GetGeometryRef();
+        OGRPoint *pOldDam = (OGRPoint*) pGeom;
+        //double az = Geometry::calcAzimuth(pBratLine->getX(pBratLine->getNumPoints()-1), pBratLine->getY(pBratLine->getNumPoints()-1), pBratLine->getX(0), pBratLine->getY(0));
+        //double x = pOldDam->getX();
+        //double y = pOldDam->getY();
+        //double elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pOldDam->getX(), pOldDam->getY(), az, sampleDist, x, y);
+        //double elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pOldDam->getX(), pOldDam->getY(), az, sampleDist, x, y);
+        //pOldDam->setX(x);
+        //pOldDam->setY(y);
+        double elev = raster_dem.valueAtPoint(m_demPath, pOldDam->getX(), pOldDam->getY());
+        setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(pOldDam->getX(), pOldDam->getY(), pBratLine->getX(0), pBratLine->getY(0)), pOldDam->getX(), pOldDam->getY());
+        setDamHeights(pDamFeat, damHeight, damHeight, damHeight, damHeight);
+        //qDebug()<<i<< elev<< slope<< Geometry::calcAzimuth(pOldDam->getX(), pOldDam->getY(), pBratLine->getX(0), pBratLine->getY(0))<< pOldDam->getX()<< pOldDam->getY();
 
         pDamFeat->SetGeometry(pOldDam);
         if (elev > 0.0)
