@@ -99,28 +99,28 @@ void Raster_BeaverPond::createHANDInput(const char *pondPath, const char *facPat
     GDALClose(pOutDS);
 }
 
-void Raster_BeaverPond::head(const char *demPath, const char *wetPath, const char *outPath)
+void Raster_BeaverPond::head(const char *demPath, const char *facPath, const char *outPath)
 {
     setProperties(demPath);
 
-    GDALDataset *pDemDS, *pWetDS, *pOutDS;
+    GDALDataset *pDemDS, *pFacDS, *pOutDS;
 
     pDemDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
-    pWetDS = (GDALDataset*) GDALOpen(wetPath, GA_ReadOnly);
+    pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pOutDS->SetGeoTransform(transform);
     pOutDS->GetRasterBand(1)->Fill(-9999);
     pOutDS->GetRasterBand(1)->SetNoDataValue(-9999);
     float *eVal = (float*) CPLMalloc(sizeof(float)*nCols);
-    float *wVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *fVal = (float*) CPLMalloc(sizeof(float)*nCols);
     float *hVal = (float*) CPLMalloc(sizeof(float)*nCols);
     for (int i=0; i<nRows; i++)
     {
         pDemDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, eVal, nCols, 1, GDT_Float32, 0, 0);
-        pWetDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, wVal, nCols, 1, GDT_Float32, 0, 0);
+        pFacDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, fVal, nCols, 1, GDT_Float32, 0, 0);
         for (int j=0; j<nCols; j++)
         {
-            if (wVal[j] >= 0.0)
+            if (fVal[j] >= 0.0)
             {
                 hVal[j] = eVal[j];
             }
@@ -133,10 +133,63 @@ void Raster_BeaverPond::head(const char *demPath, const char *wetPath, const cha
     }
 
     CPLFree(eVal);
+    CPLFree(fVal);
+    CPLFree(hVal);
+
+    GDALClose(pDemDS);
+    GDALClose(pFacDS);
+    GDALClose(pOutDS);
+}
+
+void Raster_BeaverPond::head(const char *demPath, const char *facPath, const char *wetPath, const char *outPath)
+{
+    setProperties(demPath);
+
+    GDALDataset *pDemDS, *pFacDS,*pWetDS, *pOutDS;
+    //qDebug()<<demPath<<facPath<<wetPath<<outPath;
+    pDemDS = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
+    pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
+    pWetDS = (GDALDataset*) GDALOpen(wetPath, GA_ReadOnly);
+    pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pOutDS->SetGeoTransform(transform);
+    pOutDS->GetRasterBand(1)->Fill(-9999);
+    pOutDS->GetRasterBand(1)->SetNoDataValue(-9999);
+    float *eVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *fVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *wVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *hVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    //qDebug()<<"starting loop";
+    for (int i=0; i<nRows; i++)
+    {
+        //qDebug()<<"reading row"<<i;
+        pDemDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, eVal, nCols, 1, GDT_Float32, 0, 0);
+        //qDebug()<<"dem";
+        pFacDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, fVal, nCols, 1, GDT_Float32, 0, 0);
+        //qDebug()<<"fac";
+        pWetDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, wVal, nCols, 1, GDT_Float32, 0, 0);
+        //qDebug()<<"wet";
+        for (int j=0; j<nCols; j++)
+        {
+            //qDebug()<<wVal[j]<<fVal[j]<<hVal[j];
+            if (wVal[j] >= 0.0 || fVal[j] >= 0.0)
+            {
+                hVal[j] = eVal[j];
+            }
+            else
+            {
+                hVal[j] = -9999.0;
+            }
+        }
+        pOutDS->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, hVal, nCols, 1, GDT_Float32, 0, 0);
+    }
+
+    CPLFree(eVal);
+    CPLFree(fVal);
     CPLFree(wVal);
     CPLFree(hVal);
 
     GDALClose(pDemDS);
+    GDALClose(pFacDS);
     GDALClose(pWetDS);
     GDALClose(pOutDS);
 }
