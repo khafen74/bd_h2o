@@ -19,6 +19,7 @@ class Raster
 public:
     Raster();
 
+    void adjustSoil(const char *mukeyPath, const char *varPath, const char *outPath);
     void add(const char *addPath, const char *outPath);
     void add(const char *sourcePath, const char *addPath, const char *outPath);
     void addTo(const char *addPath);

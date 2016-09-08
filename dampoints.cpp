@@ -61,6 +61,8 @@ void DamPoints::init(const char *bratPath, const char *exPath, int type)
     QFileInfo fi2(QString::fromUtf8(exPath));
     QString exFilePath = fi2.absolutePath();
     QString exName = fi2.baseName();
+    qDebug()<<exFilePath;
+    qDebug()<<exName;
 
     OGRDataSource *pInDs, *pOutDs, *pExDS;
     OGRLayer *pBratIn, *pDamsOut, *pDamsIn;
@@ -82,6 +84,7 @@ void DamPoints::init(const char *bratPath, const char *exPath, int type)
     if (type == 1)
     {
         //use existing dam locations (copy created)
+        qDebug()<<"creating dam points";
         createDamPoints_Copy(pBratIn, pDamsOut, pDamsIn);
     }
     else if (type == 2)
@@ -266,13 +269,18 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 //Create dam points to model from dams with measured heights. Modeled dam points moved to flow accumulation raster
 void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
 {
+    qDebug()<<"starting dam points";
     const char *slopeField = "iGeo_Slope";
-    double sampleDist = 50.0;
+    double sampleDist = 100.0;
     OGRFeature *pBratFeat, *pOldFeat;
+    qDebug()<<"features declared";
     OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsLyr->GetLayerDefn());
+    qDebug()<<"feature created";
     Raster raster_dem;
     int nPrimary = 0, nSecondary = 0;
+    qDebug()<<"getting features";
     int nFeatures = pExLyr->GetFeatureCount();
+    qDebug()<<"starting loop";
     for (int i=0; i<nFeatures; i++)
     {
         qDebug()<<"creating dam"<<i+1<<"of"<<nFeatures;
@@ -321,6 +329,10 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
         if (elev > 0.0)
         {
             pDamsLyr->CreateFeature(pDamFeat);
+        }
+        else
+        {
+            qDebug()<<"elevation error creating point "<<elev;
         }
     }
     qDebug()<<"primary"<<nPrimary<<"secondary"<<nSecondary;

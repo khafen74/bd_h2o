@@ -448,10 +448,13 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     float *htValHi = (float*) CPLMalloc(sizeof(float)*1);
     float *pondVal = (float*) CPLMalloc(sizeof(float));
 
-    qDebug()<<"starting loop";
+    //qDebug()<<"starting loop";
     for (int i=1; i<nRows-1; i++)
     {
-        qDebug()<<"row"<<i+1<<"of"<<nRows;
+        if ((i+1)%500 == 0)
+        {
+            qDebug()<<"row"<<i+1<<"of"<<nRows;
+        }
         for (int j=1; j<nCols-1; j++)
         {
             pDemDS->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, elevValStart, 1, 1, GDT_Float32, 0, 0);

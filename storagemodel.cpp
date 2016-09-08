@@ -1,5 +1,16 @@
 #include "storagemodel.h"
 
+/*
+ * *****************************************************************************************************
+ * ************************* RUN TYPES *****************************************************************
+ * *****************************************************************************************************
+ * type = 1: use existing dam locations (copy created)
+ * type = 2: existing dam points, maintain locations (do not move to flow accumulation)
+ * type = 3: use existing dam points with heights
+ * type = 4: use existing dam points with heights, maintain locations (do not move to flow accumulation)
+ * *****************************************************************************************************
+ */
+
 StorageModel::StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type)
 {
     init(bratPath, outPath, demPath, fdirPath, facPath, capacity);

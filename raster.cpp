@@ -5,6 +5,71 @@ Raster::Raster()
 
 }
 
+void Raster::adjustSoil(const char *mukeyPath, const char *varPath, const char *outPath)
+{
+    setProperties(mukeyPath);
+    GDALDataset *mukDS, *varDS, *outDS;
+    double transform[6];
+
+    mukDS = (GDALDataset*) GDALOpen(mukeyPath, GA_ReadOnly);
+    varDS = (GDALDataset*) GDALOpen(varPath, GA_ReadOnly);
+
+    outDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+
+    float *mukVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *varVal = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *outVal = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    double mukNoData = mukDS->GetRasterBand(1)->GetNoDataValue();
+    double varNoData = varDS->GetRasterBand(1)->GetNoDataValue();
+    qDebug()<<mukNoData<<varNoData;
+    qDebug()<<nCols<<nRows;
+
+    mukDS->GetGeoTransform(transform);
+    outDS->SetGeoTransform(transform);
+    outDS->SetProjection(mukDS->GetProjectionRef());
+    outDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    qDebug()<<"starting loop";
+    for (int i=0; i<nRows; i++)
+    {
+        mukDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, mukVal, nCols, 1, GDT_Float32, 0, 0);
+        varDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, varVal, nCols, 1, GDT_Float32, 0, 0);
+        for (int j=0; j<nCols; j++)
+        {
+            if (mukVal[j]>=2147483648.0 || mukVal<0)
+            {
+                outVal[j] = -9999.0;
+            }
+            else if (varVal[j]==varNoData || varVal[j] <= 0.0)
+            {
+                outVal[j] = 0.0;
+            }
+            else
+            {
+                outVal[j] = varVal[j];
+                //qDebug()<<outVal[j];
+            }
+            if (varVal[j] > 0.0 && varVal[j] < 200.0)
+            {
+                //qDebug()<<"outval"<<outVal[j];
+            }
+        }
+        outDS->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, outVal, nCols, 1, GDT_Float32, 0, 0);
+        if (i%500 == 0)
+        {
+            qDebug()<<"row "<<i+1<<" of "<<nRows;
+        }
+    }
+    qDebug()<<"done";
+
+    CPLFree(mukVal);
+    CPLFree(varVal);
+    CPLFree(outVal);
+
+    GDALClose(outDS);
+    GDALClose(varDS);
+    GDALClose(mukDS);
+}
 void Raster::add(const char *addPath, const char *outPath)
 {
     GDALDataset *pSourceDS, *pAddDs, *pOutDS;
@@ -1050,7 +1115,7 @@ double Raster::sampleAlongLine_RasterVal(const char *checkRasPath, double startX
         Geometry::calcCoords(startX, startY, az2, interval*(i+1), newX, newY);
         rasValue = valueAtPoint(newX, newY);
         rasValue2 = rasterValueAtPoint(checkRasPath, newX, newY);
-        if (rasValue2 > 0.5)
+        if (rasValue2 > 0.5 && rasValue != noData)
         {
             reValue = rasValue;
             found = true;

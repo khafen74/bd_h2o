@@ -9,6 +9,7 @@ int validate();
 int pataha();
 int testStats();
 int runXYZ();
+int soil();
 
 int main(int argc, char *argv[])
 {
@@ -20,6 +21,7 @@ int main(int argc, char *argv[])
     validate();
     //testStats();
     //runXYZ();
+    //soil();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -74,23 +76,23 @@ int test()
     const char *gwextend = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/gw_extend.tif";
     const char *gwdepth = "E:/etal/Projects/NonLoc/BeaverModeling/03_Results/20160606_10m_GW/gw_depth.tif";
 
-    Raster_BeaverPond rasterBP;
-    Raster raster;
-    //raster.setNoData(fil1m, -9999, 0, 5000);
-    qDebug()<<"creating hand in";
-    rasterBP.createHANDInput(pondmid, fac10m_clip, handin);
-    qDebug()<<"adding pond depth to dem";
-    rasterBP.add(fil10m, depmid, watsurf);
-    qDebug()<<"height above network";
-    raster.heightAboveNetwork(fil10m, handfdir, fac10m_clip, handfil);
-    rasterBP.heightAboveNetwork(watsurf, handfdir, handin, handnew, pondid);
-    qDebug()<<"subtract";
-    rasterBP.subtractHAND(handfil, handnew, handchange);
-    qDebug()<<"done";
+//    Raster_BeaverPond rasterBP;
+//    Raster raster;
+//    //raster.setNoData(fil1m, -9999, 0, 5000);
+//    qDebug()<<"creating hand in";
+//    rasterBP.createHANDInput(pondmid, fac10m_clip, handin);
+//    qDebug()<<"adding pond depth to dem";
+//    rasterBP.add(fil10m, depmid, watsurf);
+//    qDebug()<<"height above network";
+//    raster.heightAboveNetwork(fil10m, handfdir, fac10m_clip, handfil);
+//    rasterBP.heightAboveNetwork(watsurf, handfdir, handin, handnew, pondid);
+//    qDebug()<<"subtract";
+//    rasterBP.subtractHAND(handfil, handnew, handchange);
+//    qDebug()<<"done";
 
-    //testing gw extension via D8 flow direction
-    //rasterBP.groundwaterDepth(handfil, handnew, gwdepth);
-    rasterBP.flowDownstream(handchange, fdir10m, fac10m, demIn10m, pondmid, gwdepth, gwextend);
+//    //testing gw extension via D8 flow direction
+//    //rasterBP.groundwaterDepth(handfil, handnew, gwdepth);
+//    rasterBP.flowDownstream(handchange, fdir10m, fac10m, demIn10m, pondmid, gwdepth, gwextend);
 
 
     //Raster raster;
@@ -100,6 +102,13 @@ int test()
     //raster.setNoData(fac1m_clip, -9999, 0, 2);
     //raster.heightAboveNetwork(fil10m, fdir10m, fac10m, heightOut10m);
     //raster.subtract(demIn10m, heightOut10m, test10m);
+
+    const char *soil = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/Soil/UT/gssurgo_ut10m_utm12.tif";
+    const char *points = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/Soil/UT/grid_points/ut_points.txt";
+    Raster raster;
+    raster.toXYZ(soil, points);
+
+
 
     return 0;
 }
@@ -213,6 +222,15 @@ int validate()
 //    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/01_shpIn/Dams_LoganHUC8_JoinBRAT.shp";
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8/03_out/comparison.csv";
 
+    //Logan HUC 8 5m inputs
+//    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/01_shpIn/brat.shp";
+//    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/02_rasIn/fil_vb.tif";
+//    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/02_rasIn/fdir_vb.tif";
+//    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/02_rasIn/fac_100000_vbq.tif";
+//    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/03_out";
+//    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/01_shpIn/Dams_LoganHUC8_JoinBRAT.shp";
+//    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/03_out/comparison.csv";
+
     //Duchesne HUC 8 inputs
 //    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Duchesne_HUC8/01_shpIn/brat.shp";
 //    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Duchesne_HUC8/02_rasIn/fil10m_vb.tif";
@@ -232,13 +250,13 @@ int validate()
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m/03_out/comparison.csv";
 
     //Temple Fork 10m inputs, MODFLOW test
-    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/01_shpIn/BRAT_TempleFk_WS.shp";
-    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fil10m_vb.tif";
-    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fdir10m_vb.tif";
-    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fac_1300_vb.tif";
-    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/03_out";
-    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/01_shpIn/DamArea_BRAT_joined.shp";
-    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/03_out/comparison.csv";
+//    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/01_shpIn/BRAT_TempleFk_WS.shp";
+//    const char *demPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fil10m_vb.tif";
+//    const char *fdirPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fdir10m_vb.tif";
+//    const char *facPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/02_rasIn/fac_1300_vb.tif";
+//    const char *outDir = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/03_out";
+//    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/01_shpIn/DamArea_BRAT_joined.shp";
+//    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/03_out/comparison.csv";
 
     //Temple Fork 1m inputs
 //    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_1m/01_shpIn/BRAT_TempleFk_WS.shp";
@@ -249,14 +267,64 @@ int validate()
 //    const char *damsPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_1m/01_shpIn/DamArea_BRAT_joined.shp";
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_1m/03_out/comparison.csv";
 
+    //Price (Gordon) 2m inputs
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_2m/01_shpIn/brat.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_2m/02_rasIn/fil_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_2m/02_rasIn/fdir_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_2m/02_rasIn/fac_1000000_vb.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_2m/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_2m/01_shpIn/dam_loc";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_2m/03_out/comparison.csv";
+
+    //Price (Gordon) 5m inputs
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_5m/01_shpIn/brat.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_5m/02_rasIn/fil_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_5m/02_rasIn/fdir_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_5m/02_rasIn/fac_100000_vb.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_5m/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_5m/01_shpIn/dam_loc";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Price_Gordon_5m/03_out/comparison.csv";
+
+    //Heber 2m inputs
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Heber_2m/01_shpIn/brat.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Heber_2m/02_rasIn/fil_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Heber_2m/02_rasIn/fdir_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Heber_2m/02_rasIn/fac_60000_vb.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Heber_2m/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Heber_2m/01_shpIn/dams_join";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Heber_2m/03_out/comparison.csv";
+
 //    Raster raster;
 //    raster.setNoData(demPath, -9999.0, 100, 4000);
 //    raster.setNoData(fdirPath, 0, 1, 200);
 //    raster.setNoData(facPath, -1, 1, 2);
 
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 1);
+/*
+ * ******************************************************************************************
+ * ************************* RUN TYPES WHEN USING BRAT (Initialization types)****************
+ * ******************************************************************************************
+ * type = 1: vector based (pond determined with maximum extent polygon)
+ * type = 2: raster based (pond determined with flow direction algebra)
+ * ******************************************************************************************
+ */
+
+    //Initialize surface storage model
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 2);
+
+ /*
+ * *****************************************************************************************************
+ * ************************* RUN TYPES WHEN USING EXISTING POINTS***************************************
+ * *****************************************************************************************************
+ * type = 1 (default): use existing dam locations (copy created)
+ * type = 2: existing dam locations, maintain locations (do not move to flow accumulation)
+ * type = 3: use existing dam points with heights
+ * type = 4: use existing dam points with heights, maintain locations (do not move to flow accumulation)
+ * *****************************************************************************************************
+ */
+
+    // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
-    model.runFromPoints(damsPath, csvPath);
+    model.runFromPoints(damsPath, csvPath, 1);
     //model.runFromPointsWithHeights(damsPath,csvPath);
 
     return 0;
@@ -308,4 +376,37 @@ int runXYZ()
     raster.toXYZ(head, head_xyz);
 
     return 0;
+}
+
+int soil()
+{
+    qDebug()<<"setting up";
+    const char *mukeyUT = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/Soil/gSSURGO/Utah/TIF/ut_mapunit_10m.tif";
+    const char *ksatUT = "C:/etal/Projects/USA/gSSURGO/Utah/ut_ksat_10m.tif";
+    const char *kvUT = "C:/etal/Projects/USA/gSSURGO/Utah/ut_kv_10m.tif";
+    const char *porUT = "C:/etal/Projects/USA/gSSURGO/Utah/ut_por_10m.tif";
+    const char *ksatUTout = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Utah/ut_ksat_10m_fix.tif";
+    const char *kvUTout = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Utah/ut_kv_10m_fix.tif";
+    const char *porUTout = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Utah/ut_por_10m_fix.tif";
+
+    const char *mukeyID = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/Soil/gSSURGO/Idaho/TIF/id_mapunit_10m.tif";
+    const char *ksatID = "C:/etal/Projects/USA/gSSURGO/Idaho/id_ksat_10m.tif";
+    const char *kvID = "C:/etal/Projects/USA/gSSURGO/Idaho/id_kv_10m.tif";
+    const char *porID = "C:/etal/Projects/USA/gSSURGO/Idaho/id_por_10m.tif";
+    const char *ksatIDout = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Idaho/id_ksat_10m_fix.tif";
+    const char *kvIDout = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Idaho/id_kv_10m_fix.tif";
+    const char *porIDout = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Idaho/id_por_10m_fix.tif";
+
+    const char *mukeyOR = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/Soil/gSSURGO/Oregon/TIF/or_mapunit_10m.tif";
+    const char *ksatOR = "E:/etal/Projects/NonLoc/BeaverModeling/02_Data/Soil/gSSURGO/Oregon/TIF/or_ksat_10m";
+    const char *kvOR = "C:/etal/Projects/USA/gSSURGO/Oregon/or_kv_10m.tif";
+    const char *porOR = "C:/etal/Projects/USA/gSSURGO/Oregon/or_por_10m.tif";
+    const char *ksatORout = "C:/etal/Projects/USA/gSSURGO/Oregon/or_ksat_10m_fix.tif";
+    const char *kvORout = "C:/etal/Projects/USA/gSSURGO/Oregon/or_kv_10m_fix.tif";
+    const char *porORout = "C:/etal/Projects/USA/gSSURGO/Oregon/or_por_10m_fix.tif";
+
+    qDebug()<<"start";
+    Raster raster;
+    raster.adjustSoil(mukeyID, kvID, kvIDout);
+    qDebug()<<"done";
 }
