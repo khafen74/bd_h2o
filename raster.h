@@ -30,6 +30,7 @@ public:
     void aspect(const char *sourcePath, const char *aspectPath);
     int checkRowCol(int row, int col);
     void demOfDifference(const char *oldDem, const char *newDem, const char *dodRaster);
+    bool drainsToMe(int index, int fdir);
     void extractByMask_CellCenters(const char *rasterOut, const char *polygonPath, const char *lyrName);
     void extractByMask_CellCenters(const char *rasterPath, const char *rasterOut, const char *polygonPath, const char *lyrName);
     void fillSinks(const char *fillDem, double maxDepth);

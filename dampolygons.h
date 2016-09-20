@@ -52,6 +52,7 @@ private:
             m_qsMidPond, m_qsLoPond, m_qsHiPond,
             m_qsBratDir, m_qsBratName,
             m_qsDamID;
+    QList<QVector<double> > m_qlDams;
 };
 
 #endif // DAMPOLYGONS_H

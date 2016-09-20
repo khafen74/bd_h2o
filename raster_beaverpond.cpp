@@ -5,6 +5,34 @@ Raster_BeaverPond::Raster_BeaverPond()
 
 }
 
+void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, int startX, int startY)
+{
+    unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
+    flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX, startY, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+
+    for (int i=0; i<9; i++)
+    {
+        int count = 0;
+
+        while (count < 9)
+        {
+            int newX = startX;
+            int newY = startY;
+            if (drainsToMe(i, fdirWin[i]))
+            {
+                newX += COL_OFFSET[i];
+                newY += ROW_OFFSET[i];
+            }
+            else
+            {
+                count++;
+            }
+        }
+    }
+
+CPLFree(fdirWin);
+}
+
 void Raster_BeaverPond::groundwaterDepth(const char *startDepth, const char *newDepth, const char *outPath)
 {
     setProperties(startDepth);
@@ -171,7 +199,7 @@ void Raster_BeaverPond::head(const char *demPath, const char *facPath, const cha
         for (int j=0; j<nCols; j++)
         {
             //qDebug()<<wVal[j]<<fVal[j]<<hVal[j];
-            if (wVal[j] >= 0.0 || fVal[j] >= 0.0)
+            if (wVal[j] > 0.0 || fVal[j] >= 0.0)
             {
                 hVal[j] = eVal[j];
             }
@@ -547,6 +575,71 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     GDALClose(pHtOutLoDS);
     GDALClose(pHtOutMidDS);
     GDALClose(pHtOutHiDS);
+}
+
+void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *fdirPath, const char *heightPathLo, const char *heightPathMid, const char *heightPathHi, const char *outHeightLo, const char *outHeightMid, const char *outHeightHi)
+{
+    setProperties(demPath);
+
+    GDALDataset *pDem, *pFdir, *pLoHt, *pMidHt, *pHiHt, *pLoDep, *pMidDep, *pHiDep;
+    pDem = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
+    pFdir = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
+    pLoHt = (GDALDataset*) GDALOpen(heightPathLo, GA_ReadOnly);
+    pMidHt = (GDALDataset*) GDALOpen(heightPathMid, GA_ReadOnly);
+    pHiHt = (GDALDataset*) GDALOpen(heightPathHi, GA_ReadOnly);
+
+    pLoDep = pDriverTiff->Create(outHeightLo, nCols, nRows, 1, GDT_Float32, NULL);
+    pLoDep->SetGeoTransform(transform);
+    pLoDep->GetRasterBand(1)->SetNoDataValue(noData);
+    pLoDep->GetRasterBand(1)->Fill(noData);
+    pMidDep = pDriverTiff->Create(outHeightMid, nCols, nRows, 1, GDT_Float32, NULL);
+    pMidDep->SetGeoTransform(transform);
+    pMidDep->GetRasterBand(1)->SetNoDataValue(noData);
+    pMidDep->GetRasterBand(1)->Fill(noData);
+    pHiDep = pDriverTiff->Create(outHeightHi, nCols, nRows, 1, GDT_Float32, NULL);
+    pHiDep->SetGeoTransform(transform);
+    pHiDep->GetRasterBand(1)->SetNoDataValue(noData);
+    pHiDep->GetRasterBand(1)->Fill(noData);
+
+    float* htLo = (float*) CPLMalloc(sizeof(float)*1);
+    float* htMid = (float*) CPLMalloc(sizeof(float)*1);
+    float* htHi = (float*) CPLMalloc(sizeof(float)*1);
+    float* demVal = (float*) CPLMalloc(sizeof(float)*1);
+    unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
+
+    for (int i=1; i<nRows-1; i++)
+    {
+        for (int j=1; j<nCols-1; j++)
+        {
+            pLoHt->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, htLo, 1, 1, GDT_Float32, 0, 0);
+
+            if (*htLo > 0.0)
+            {
+                pDem->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
+                pFdir->GetRasterBand(1)->RasterIO(GF_Read, j-1, i-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+
+                for (int l=0; l<9; l++)
+                {
+
+                }
+            }
+        }
+    }
+
+    CPLFree(htLo);
+    CPLFree(htMid);
+    CPLFree(htHi);
+    CPLFree(demVal);
+    CPLFree(fdirWin);
+
+    GDALClose(pDem);
+    GDALClose(pFdir);
+    GDALClose(pLoHt);
+    GDALClose(pMidHt);
+    GDALClose(pHiHt);
+    GDALClose(pLoDep);
+    GDALClose(pMidDep);
+    GDALClose(pHiDep);
 }
 
 void Raster_BeaverPond::subtractHAND(const char *endPath, const char *outPath)

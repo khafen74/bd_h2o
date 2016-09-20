@@ -279,6 +279,8 @@ void DamPolygons::createHandInput_ponds(OGRLayer *pPts)
     int nDams = pPts->GetFeatureCount();
     qDebug()<<"starting loop"<<nDams;
 
+    QVector<double> damAtt;
+    m_qlDams.clear();
     for (int i=0; i<nDams; i++)
     {
         OGRFeature *pDamFeature;
@@ -294,6 +296,9 @@ void DamPolygons::createHandInput_ponds(OGRLayer *pPts)
         raster.writeCellValue(m_qsMidHt.toStdString().c_str(), damPoint->getX(), damPoint->getY(), midVal);
         raster.writeCellValue(m_qsHiHt.toStdString().c_str(), damPoint->getX(), damPoint->getY(), hiVal);
         raster.writeCellValue(m_qsDamID.toStdString().c_str(), damPoint->getX(), damPoint->getY(), damID);
+        damAtt.clear();
+        damAtt.append(damPoint->getX()), damAtt.append(damPoint->getY()), damAtt.append(damID), damAtt.append(loVal), damAtt.append(midVal), damAtt.append(hiVal);
+        m_qlDams.append(damAtt);
 //        raster.setProperties(m_qsDamID.toStdString().c_str());
 //        int row = raster.getRow(damPoint->getY());
 //        int col = raster.getCol(damPoint->getX());

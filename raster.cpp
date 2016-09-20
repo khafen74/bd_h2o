@@ -317,6 +317,50 @@ int Raster::checkRowCol(int row, int col)
     return 1;
 }
 
+bool Raster::drainsToMe(int index, int fdir)
+{
+    if (index == 4)
+    {
+        return false;
+    }
+    else if (index == 0 && fdir == FLOW_DIR[8])
+    {
+        return true;
+    }
+    else if (index == 1 && fdir == FLOW_DIR[7])
+    {
+        return true;
+    }
+    else if (index == 2 && fdir == FLOW_DIR[6])
+    {
+        return true;
+    }
+    else if (index == 3 && fdir == FLOW_DIR[5])
+    {
+        return true;
+    }
+    else if (index == 5 && fdir == FLOW_DIR[3])
+    {
+        return true;
+    }
+    else if (index == 6 && fdir == FLOW_DIR[2])
+    {
+        return true;
+    }
+    else if (index == 7 && fdir == FLOW_DIR[1])
+    {
+        return true;
+    }
+    else if (index == 8 && fdir == FLOW_DIR[0])
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 void Raster::extractByMask_CellCenters(const char *rasterOut, const char *polygonPath, const char *lyrName)
 {
     OGRDataSource *pPolyDS;
