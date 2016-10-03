@@ -107,8 +107,11 @@ void StorageModel::createModflowInputs(DamPolygons pondExtents)
 void StorageModel::run()
 {
     cleanOutDir();
+    qDebug()<<"starting points";
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap);
+    qDebug()<<"starting polys";
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
+    qDebug()<<"finished polys";
     //calcFinalWSE(pondPolys);
     ReachLines reachStorage(pondPoints);
     //setOutputPaths(pondPolys);
@@ -131,15 +134,15 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut, int nRu
     //pondPoints.compareArea(damsIn, csvOut);
 }
 
-void StorageModel::runFromPointsWithHeights(const char *damsIn, const char *csvOut)
+void StorageModel::runFromPointsWithHeights(const char *damsIn, const char *csvOut, int nRunType)
 {
     cleanOutDir();
-    int nDamRunType = 4;
-    if (nDamRunType == 4)
+    //int nDamRunType = 4;
+    if (nRunType == 4)
     {
         m_nType = 2;
     }
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, nDamRunType);
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, nRunType);
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);
     setOutputPaths(pondPolys);

@@ -6,6 +6,7 @@
 int test();
 int run();
 int validate();
+int logan();
 int pataha();
 int testStats();
 int runXYZ();
@@ -19,6 +20,7 @@ int main(int argc, char *argv[])
 
     //test();
     validate();
+    //logan();
     //testStats();
     //runXYZ();
     //soil();
@@ -205,13 +207,13 @@ int validate()
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Farmington_3m/03_out/comparison.csv";
 
     //Logan HUC 8 inputs
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/01_shpIn/brat.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/02_rasIn/fil10m_vb.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/02_rasIn/fdir10m_vb.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/02_rasIn/fac10m_vb.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/01_shpIn/Dams_LoganHUC8_JoinBRAT.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/03_out/comparison.csv";
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/01_shpIn/brat.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/02_rasIn/fil10m_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/02_rasIn/fdir10m_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/02_rasIn/fac10m_vb.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/01_shpIn/Dams_LoganHUC8_JoinBRAT.shp";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/03_out/comparison.csv";
 
     //Logan HUC 8 5m inputs
 //    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Logan_HUC8_5m/01_shpIn/brat.shp";
@@ -232,13 +234,13 @@ int validate()
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Duchesne_HUC8/03_out/comparison.csv";
 
     //Temple Fork 10m inputs
-//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
-//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
-//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
-//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
-//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
 
     //Temple Fork 10m inputs, MODFLOW test
 //    const char *bratPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/TempleFork_10m_MODFLOW/01_shpIn/BRAT_TempleFk_WS.shp";
@@ -324,11 +326,36 @@ int validate()
 
     // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
-    model.runFromPoints(damsPath, csvPath, 1);
-    //model.runFromPointsWithHeights(damsPath,csvPath);
+    //model.runFromPoints(damsPath, csvPath, 1);
+    model.runFromPointsWithHeights(damsPath,csvPath, 3);
     //model.run();
 
     return 0;
+}
+
+int logan()
+{
+    QString dirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/05_HUC12";
+    QDir dir(dirPath);
+    QFileInfoList fiList = dir.entryInfoList();
+    qDebug()<<"starting loop";
+
+    for (int i=2; i<fiList.length(); i++)
+    {
+        qDebug()<<fiList[i].baseName();
+        std::string basePath = dirPath.toStdString() + "/" + fiList[i].baseName().toStdString();
+        std::string bratPath = basePath + "/01_shpIn/brat.shp";
+        std::string outDir = basePath + "/03_out";
+        std::string demPath = basePath + "/02_rasIn/fil.tif";
+        std::string facPath = basePath + "/02_rasIn/fac.tif";
+        std::string fdirPath = basePath + "/02_rasIn/fdir.tif";
+        //qDebug()<<"names set"<<bratPath.toStdString().c_str()<<outDir.toStdString().c_str()<<demPath.toStdString().c_str()<<facPath.toStdString().c_str()<<fdirPath.toStdString().c_str();
+
+        //qDebug()<<"running"<<i+1<<"of"<<fiList.length()<<basePath;
+        StorageModel model(bratPath.c_str(), outDir.c_str(), demPath.c_str(), fdirPath.c_str(), facPath.c_str(), 0.82, 2);
+        model.run();
+        //qDebug()<<basePath<<"done";
+    }
 }
 
 int pataha()

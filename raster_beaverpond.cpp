@@ -5,10 +5,14 @@ Raster_BeaverPond::Raster_BeaverPond()
 
 }
 
-void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, int startX, int startY)
+void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, int startX, int startY, double startE)
 {
     unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
+    float *demWin = (float*) CPLMalloc(sizeof(float)*9);
+    float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
     flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX, startY, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+
+    double maxHeight = 4.0;
 
     for (int i=0; i<9; i++)
     {
@@ -18,10 +22,12 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, int
         {
             int newX = startX;
             int newY = startY;
-            if (drainsToMe(i, fdirWin[i]))
+            *htAbove = demWin[i] - startE;
+            if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight)
             {
                 newX += COL_OFFSET[i];
                 newY += ROW_OFFSET[i];
+                backwardHAND(flowDir, dem, newX, newY, startE);
             }
             else
             {
@@ -577,33 +583,21 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     GDALClose(pHtOutHiDS);
 }
 
-void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *fdirPath, const char *heightPathLo, const char *heightPathMid, const char *heightPathHi, const char *outHeightLo, const char *outHeightMid, const char *outHeightHi)
+void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *fdirPath, const char *idPath, const char *outPath)
 {
     setProperties(demPath);
 
-    GDALDataset *pDem, *pFdir, *pLoHt, *pMidHt, *pHiHt, *pLoDep, *pMidDep, *pHiDep;
+    GDALDataset *pDem, *pFdir, *pId, *pHeight;
     pDem = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pFdir = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
-    pLoHt = (GDALDataset*) GDALOpen(heightPathLo, GA_ReadOnly);
-    pMidHt = (GDALDataset*) GDALOpen(heightPathMid, GA_ReadOnly);
-    pHiHt = (GDALDataset*) GDALOpen(heightPathHi, GA_ReadOnly);
+    pId = (GDALDataset*) GDALOpen(idPath, GA_Update);
 
-    pLoDep = pDriverTiff->Create(outHeightLo, nCols, nRows, 1, GDT_Float32, NULL);
-    pLoDep->SetGeoTransform(transform);
-    pLoDep->GetRasterBand(1)->SetNoDataValue(noData);
-    pLoDep->GetRasterBand(1)->Fill(noData);
-    pMidDep = pDriverTiff->Create(outHeightMid, nCols, nRows, 1, GDT_Float32, NULL);
-    pMidDep->SetGeoTransform(transform);
-    pMidDep->GetRasterBand(1)->SetNoDataValue(noData);
-    pMidDep->GetRasterBand(1)->Fill(noData);
-    pHiDep = pDriverTiff->Create(outHeightHi, nCols, nRows, 1, GDT_Float32, NULL);
-    pHiDep->SetGeoTransform(transform);
-    pHiDep->GetRasterBand(1)->SetNoDataValue(noData);
-    pHiDep->GetRasterBand(1)->Fill(noData);
+    pHeight = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pHeight->SetGeoTransform(transform);
+    pHeight->GetRasterBand(1)->SetNoDataValue(noData);
+    pHeight->GetRasterBand(1)->Fill(noData);
 
-    float* htLo = (float*) CPLMalloc(sizeof(float)*1);
-    float* htMid = (float*) CPLMalloc(sizeof(float)*1);
-    float* htHi = (float*) CPLMalloc(sizeof(float)*1);
+    float* idVal = (float*) CPLMalloc(sizeof(float)*1);
     float* demVal = (float*) CPLMalloc(sizeof(float)*1);
     unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
 
@@ -611,9 +605,9 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     {
         for (int j=1; j<nCols-1; j++)
         {
-            pLoHt->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, htLo, 1, 1, GDT_Float32, 0, 0);
+            pId->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, idVal, 1, 1, GDT_Float32, 0, 0);
 
-            if (*htLo > 0.0)
+            if (*idVal > 0.0)
             {
                 pDem->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
                 pFdir->GetRasterBand(1)->RasterIO(GF_Read, j-1, i-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
@@ -626,20 +620,14 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
         }
     }
 
-    CPLFree(htLo);
-    CPLFree(htMid);
-    CPLFree(htHi);
+    CPLFree(idVal);
     CPLFree(demVal);
     CPLFree(fdirWin);
 
     GDALClose(pDem);
     GDALClose(pFdir);
-    GDALClose(pLoHt);
-    GDALClose(pMidHt);
-    GDALClose(pHiHt);
-    GDALClose(pLoDep);
-    GDALClose(pMidDep);
-    GDALClose(pHiDep);
+    GDALClose(pId);
+    GDALClose(pHeight);
 }
 
 void Raster_BeaverPond::subtractHAND(const char *endPath, const char *outPath)

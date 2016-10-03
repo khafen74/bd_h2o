@@ -19,7 +19,7 @@ public:
     void createModflowInputs(DamPolygons pondExtents);
     void run();
     void runFromPoints(const char *damsIn, const char *csvOut, int nRunType=1);
-    void runFromPointsWithHeights(const char *damsIn, const char *csvOut);
+    void runFromPointsWithHeights(const char *damsIn, const char *csvOut, int nRunType=3);
     void setOutputPaths(DamPolygons pondExtents);
 
 private:

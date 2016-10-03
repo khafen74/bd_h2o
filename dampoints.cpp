@@ -7,6 +7,7 @@ DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facP
     setFacPath(facPath);
     setOutDir(outDirPath);
     setBratCapacity(modCap);
+    qDebug()<<"init points";
     init(bratPath);
 }
 
@@ -22,6 +23,8 @@ DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facP
 
 void DamPoints::init(const char *bratPath)
 {
+    qDebug()<<bratPath;
+    qDebug()<<m_outDir;
     m_layerName = "ModeledDamPoints";
     loadDriver();
 
@@ -34,7 +37,9 @@ void DamPoints::init(const char *bratPath)
     OGRLayer *pBratIn, *pDamsOut;
 
     //load BRAT shapefile and create output shapefile for dams
+    qDebug()<<"creating in dir"<<m_qsBratDir;
     pInDs = m_pDriverShp->CreateDataSource(m_qsBratDir.toStdString().c_str(), NULL);
+    qDebug()<<"creating out dir"<<m_outDir;
     pOutDs = m_pDriverShp->CreateDataSource(m_outDir, NULL);
     pBratIn = pInDs->GetLayerByName(m_qsBratName.toStdString().c_str());
     pDamsOut = pOutDs->CreateLayer(m_layerName, pBratIn->GetSpatialRef(), wkbPoint, NULL);
@@ -171,9 +176,13 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
     //BRAT line segment
     OGRFeature *pBratFeat;
     //feature for modeled dams layer
+    qDebug()<<"loading ogr feature";
     OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsLyr->GetLayerDefn());
+    qDebug()<<"done";
     Raster raster_dem;
+    qDebug()<<"counting features";
     int nFeatures = pBratLyr->GetFeatureCount();
+    qDebug()<<"features"<<nFeatures;
 
     //loop through all features in BRAT layer
     for (int i=0; i<nFeatures; i++)
@@ -204,7 +213,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 
         //calculate number of dams from dam density, segment, length, and percent of capacity (m_modCap)
         nDamCount = round(length * (damDens/1000.0) * m_modCap);
-        qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
+        //qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
 
         if (nDamCount > 0)
         {
