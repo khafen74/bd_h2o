@@ -62,6 +62,14 @@ void DamPolygons::init(DamPoints pondPts)
         summarizePondDepths_raster(pPts_lyr);
         qDebug()<<"finished summary";
     }
+    else if (m_nType == 3)
+    {
+        createHandInput_ponds(pPts_lyr);
+        Raster_BeaverPond raster_bp;
+        qDebug()<<"starting recursive HAND";
+        raster_bp.pondDepth_backwardHAND(m_demPath, m_fdirPath, m_qsDamID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str());
+        qDebug()<<"recursive HAND done";
+    }
     else
     {
         qDebug()<<"problem";
@@ -471,6 +479,7 @@ void DamPolygons::setRasterPaths()
     m_qsLoPond = dirPath + "/depPondLo.tif";
     m_qsMidPond = dirPath + "/depPondMid.tif";
     m_qsHiPond = dirPath + "/depPondHi.tif";
+    m_qsHtAbove = dirPath + "/htAbove.tif";
 }
 
 void DamPolygons::summarizePondDepths(OGRLayer *pPts)

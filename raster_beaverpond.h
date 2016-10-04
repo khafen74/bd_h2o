@@ -9,7 +9,7 @@ class Raster_BeaverPond : public Raster
 public:
     Raster_BeaverPond();
 
-    void backwardHAND(GDALDataset *flowDir, GDALDataset *dem, int startX, int startY, double startE);
+    void backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDALDataset *id, GDALDataset *out, int startX, int startY, double startE, float *pondID);
     void groundwaterDepth(const char *startDepth, const char *newDepth, const char *outPath);
     void createHANDInput(const char *pondPath, const char *facPath, const char *outPath);
     void head(const char *demPath, const char *facPath, const char *outPath);

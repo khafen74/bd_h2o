@@ -144,9 +144,12 @@ void StorageModel::runFromPointsWithHeights(const char *damsIn, const char *csvO
     }
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, nRunType);
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
-    ReachLines reachStorage(pondPoints);
-    setOutputPaths(pondPolys);
-    createModflowInputs(pondPolys);
+    if (m_nType != 3)
+    {
+        ReachLines reachStorage(pondPoints);
+        setOutputPaths(pondPolys);
+        createModflowInputs(pondPolys);
+    }
 }
 
 void StorageModel::setOutputPaths(DamPolygons pondExtents)

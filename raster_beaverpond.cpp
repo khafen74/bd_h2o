@@ -5,38 +5,43 @@ Raster_BeaverPond::Raster_BeaverPond()
 
 }
 
-void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, int startX, int startY, double startE)
+void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDALDataset *id, GDALDataset *out, int startX, int startY, double startE, float *pondID)
 {
-    unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
-    float *demWin = (float*) CPLMalloc(sizeof(float)*9);
-    float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
-    flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX, startY, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
-
-    double maxHeight = 4.0;
+    double maxHeight = 3.25;
 
     for (int i=0; i<9; i++)
     {
-        int count = 0;
+        //might need to pass in allocated memory
+        unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
+        float *demWin = (float*) CPLMalloc(sizeof(float)*9);
+        float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
+        flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+        dem->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, demWin, 3, 3, GDT_Float32, 0, 0);
 
-        while (count < 9)
+        int newX = startX;
+        int newY = startY;
+        *htAbove = demWin[i] - startE;
+        //qDebug()<<fdirWin[i]<<demWin[i]<<startE<<*htAbove;
+        if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight && *htAbove > -10.0)
         {
-            int newX = startX;
-            int newY = startY;
-            *htAbove = demWin[i] - startE;
-            if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight)
-            {
-                newX += COL_OFFSET[i];
-                newY += ROW_OFFSET[i];
-                backwardHAND(flowDir, dem, newX, newY, startE);
-            }
-            else
-            {
-                count++;
-            }
+            newX += COL_OFFSET[i];
+            newY += ROW_OFFSET[i];
+            id->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, pondID, 1, 1, GDT_Float32, 0, 0);
+            out->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, htAbove, 1, 1, GDT_Float32, 0, 0);
+            //qDebug()<<"values written"<<i<<*pondID<<*htAbove<<demWin[i]<<startE;
+            CPLFree(demWin);
+            CPLFree(fdirWin);
+            CPLFree(htAbove);
+            backwardHAND(flowDir, dem, id, out, newX, newY, startE, pondID);
+        }
+        else
+        {
+            CPLFree(demWin);
+            CPLFree(fdirWin);
+            CPLFree(htAbove);
         }
     }
 
-CPLFree(fdirWin);
 }
 
 void Raster_BeaverPond::groundwaterDepth(const char *startDepth, const char *newDepth, const char *outPath)
@@ -592,6 +597,7 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     pFdir = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
     pId = (GDALDataset*) GDALOpen(idPath, GA_Update);
 
+    qDebug()<<"creating ht above";
     pHeight = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pHeight->SetGeoTransform(transform);
     pHeight->GetRasterBand(1)->SetNoDataValue(noData);
@@ -607,14 +613,16 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
         {
             pId->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, idVal, 1, 1, GDT_Float32, 0, 0);
 
-            if (*idVal > 0.0)
+            if (*idVal >= 0.0)
             {
                 pDem->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
                 pFdir->GetRasterBand(1)->RasterIO(GF_Read, j-1, i-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
 
                 for (int l=0; l<9; l++)
                 {
-
+                    double startE = *demVal;
+                    //qDebug()<<"backward hand"<<i<<j<<l;
+                    backwardHAND(pFdir, pDem, pId, pHeight, j, i, startE, idVal);
                 }
             }
         }
@@ -628,6 +636,7 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     GDALClose(pFdir);
     GDALClose(pId);
     GDALClose(pHeight);
+    qDebug()<<"all datasets closed";
 }
 
 void Raster_BeaverPond::subtractHAND(const char *endPath, const char *outPath)

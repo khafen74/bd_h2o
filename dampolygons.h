@@ -51,7 +51,8 @@ private:
             m_qsPondID,
             m_qsMidPond, m_qsLoPond, m_qsHiPond,
             m_qsBratDir, m_qsBratName,
-            m_qsDamID;
+            m_qsDamID,
+            m_qsHtAbove;
     QList<QVector<double> > m_qlDams;
 };
 
