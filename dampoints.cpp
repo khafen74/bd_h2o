@@ -432,7 +432,7 @@ void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, 
     {
         pOldFeat = pExLyr->GetFeature(i);
         int nBratFID = pOldFeat->GetFieldAsInteger("ID");
-        double damHeight = pOldFeat->GetFieldAsDouble("Dam_Height");
+        double damHeight = pOldFeat->GetFieldAsDouble("DamHt_m"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m"
         pBratFeat = pBratLyr->GetFeature(nBratFID);
         double slope = pBratFeat->GetFieldAsDouble(slopeField);
         OGRGeometry *pGeom = pBratFeat->GetGeometryRef();

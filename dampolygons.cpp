@@ -77,6 +77,7 @@ void DamPolygons::init(DamPoints pondPts)
         qDebug()<<"summarizing by pond";
         summarizePondDepths_raster(pPts_lyr);
         qDebug()<<"summary done";
+        qDebug()<<"NOTE: IF DAM HEIGHTS COME OUT AS ZERO CHAGNE LINE 435 IN DAMPOINTS.CPP";
     }
     else
     {
@@ -219,6 +220,7 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, co
                 dHtLo = pFeature->GetFieldAsDouble("ht_lo");
                 dHtMid = pFeature->GetFieldAsDouble("ht_mid");
                 dHtHi = pFeature->GetFieldAsDouble("ht_hi");
+                //qDebug()<<dHtLo<<dHtMid<<dHtHi;
 
                 if (htRow[j] < dHtLo)
                 {
