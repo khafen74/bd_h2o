@@ -67,8 +67,16 @@ void DamPolygons::init(DamPoints pondPts)
         createHandInput_ponds(pPts_lyr);
         Raster_BeaverPond raster_bp;
         qDebug()<<"starting recursive HAND";
-        raster_bp.pondDepth_backwardHAND(m_demPath, m_fdirPath, m_qsDamID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str());
-        qDebug()<<"recursive HAND done";
+        raster_bp.pondDepth_backwardHAND(m_demPath, m_fdirPath, m_qsDamID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str(), m_qsPondID.toStdString().c_str());
+        qDebug()<<"calculating water depth";
+        calculateWaterDepth(pPts_lyr, m_qsPondID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str());
+        qDebug()<<"depth done";
+        raster_bp.setNoData(m_qsHi.toStdString().c_str(), -9999.0, 0.00001, 10.0);
+        raster_bp.setNoData(m_qsMid.toStdString().c_str(), -9999.0, 0.00001, 10.0);
+        raster_bp.setNoData(m_qsLo.toStdString().c_str(), -9999.0, 0.00001, 10.0);
+        qDebug()<<"summarizing by pond";
+        summarizePondDepths_raster(pPts_lyr);
+        qDebug()<<"summary done";
     }
     else
     {
@@ -175,6 +183,73 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
         OGRFeature::DestroyFeature(pDamFeat);
         OGRFeature::DestroyFeature(pPolyFeat);
     }
+}
+
+void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, const char *htAbovePath)
+{
+    createDepthRasters();
+
+    GDALDataset *pDepLo, *pDepMid, *pDepHi, *pId, *pHt;
+    OGRFeature *pFeature;
+
+    pId = (GDALDataset*) GDALOpen(pondIdPath, GA_ReadOnly);
+    pHt = (GDALDataset*) GDALOpen(htAbovePath, GA_ReadOnly);
+    pDepLo = (GDALDataset*) GDALOpen(m_qsLo.toStdString().c_str(), GA_Update);
+    pDepMid = (GDALDataset*) GDALOpen(m_qsMid.toStdString().c_str(), GA_Update);
+    pDepHi = (GDALDataset*) GDALOpen(m_qsHi.toStdString().c_str(), GA_Update);
+
+    float *idRow = (float*) CPLMalloc(sizeof(float)*pId->GetRasterXSize());
+    float *htRow = (float*) CPLMalloc(sizeof(float)*pId->GetRasterXSize());
+    float *writeVal = (float*) CPLMalloc(sizeof(float)*1);
+
+    int nFeat;
+    double dHtLo, dHtMid, dHtHi;
+
+    for (int i=0; i<pId->GetRasterYSize(); i++)
+    {
+        pId->GetRasterBand(1)->RasterIO(GF_Read, 0, i, pId->GetRasterXSize(), 1, idRow, pId->GetRasterXSize(), 1, GDT_Float32, 0, 0);
+        pHt->GetRasterBand(1)->RasterIO(GF_Read, 0, i, pHt->GetRasterXSize(), 1, htRow, pHt->GetRasterXSize(), 1, GDT_Float32, 0, 0);
+
+        for (int j=0; j<pId->GetRasterXSize(); j++)
+        {
+            if (idRow[j] >= 0.0)
+            {
+                nFeat = round(idRow[j]);
+                pFeature = pPts->GetFeature(nFeat);
+                dHtLo = pFeature->GetFieldAsDouble("ht_lo");
+                dHtMid = pFeature->GetFieldAsDouble("ht_mid");
+                dHtHi = pFeature->GetFieldAsDouble("ht_hi");
+
+                if (htRow[j] < dHtLo)
+                {
+                    *writeVal = dHtLo - htRow[j];
+                    pDepLo->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
+                }
+                if (htRow[j] < dHtMid)
+                {
+                    *writeVal = dHtMid - htRow[j];
+                    pDepMid->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
+                }
+                if (htRow[j] < dHtHi)
+                {
+                    *writeVal = dHtHi - htRow[j];
+                    pDepHi->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
+                }
+            }
+        }
+    }
+
+    OGRFeature::DestroyFeature(pFeature);
+
+    CPLFree(idRow);
+    CPLFree(htRow);
+    CPLFree(writeVal);
+
+    GDALClose(pId);
+    GDALClose(pHt);
+    GDALClose(pDepLo);
+    GDALClose(pDepMid);
+    GDALClose(pDepHi);
 }
 
 void DamPolygons::createDepthRasters()

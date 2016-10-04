@@ -5,37 +5,50 @@ Raster_BeaverPond::Raster_BeaverPond()
 
 }
 
-void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDALDataset *id, GDALDataset *out, int startX, int startY, double startE, float *pondID)
+//Work the HAND algorithm backward to determine pond depth
+void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDALDataset *idOut, GDALDataset *out, int startX, int startY, double startE, float *pondID)
 {
+    //Represents maximum dam height
     double maxHeight = 3.25;
 
     for (int i=0; i<9; i++)
     {
-        //might need to pass in allocated memory
         unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
         float *demWin = (float*) CPLMalloc(sizeof(float)*9);
         float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
+        float *htOld = (float*) CPLMalloc(sizeof(float)*1);
         flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
         dem->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, demWin, 3, 3, GDT_Float32, 0, 0);
 
         int newX = startX;
         int newY = startY;
         *htAbove = demWin[i] - startE;
-        //qDebug()<<fdirWin[i]<<demWin[i]<<startE<<*htAbove;
+
+        //Index cell must drain to target cell
         if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight && *htAbove > -10.0)
         {
             newX += COL_OFFSET[i];
             newY += ROW_OFFSET[i];
-            id->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, pondID, 1, 1, GDT_Float32, 0, 0);
-            out->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, htAbove, 1, 1, GDT_Float32, 0, 0);
-            //qDebug()<<"values written"<<i<<*pondID<<*htAbove<<demWin[i]<<startE;
+            out->GetRasterBand(1)->RasterIO(GF_Read, newX, newY, 1, 1, htOld, 1, 1, GDT_Float32, 0, 0);
+
+            //Only write new value if it is less than previous value (deepest pond always wins)
+            if (*htOld >= *htAbove || *htOld < -10.0)
+            {
+                idOut->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, pondID, 1, 1, GDT_Float32, 0, 0);
+                out->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, htAbove, 1, 1, GDT_Float32, 0, 0);
+            }
+            //Free memory before recursive call (should prevent allocating too much memory)
+            CPLFree(htOld);
             CPLFree(demWin);
             CPLFree(fdirWin);
             CPLFree(htAbove);
-            backwardHAND(flowDir, dem, id, out, newX, newY, startE, pondID);
+
+            //Run algorithm again
+            backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID);
         }
         else
         {
+            CPLFree(htOld);
             CPLFree(demWin);
             CPLFree(fdirWin);
             CPLFree(htAbove);
@@ -588,17 +601,23 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
     GDALClose(pHtOutHiDS);
 }
 
-void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *fdirPath, const char *idPath, const char *outPath)
+//Determine pond depth with the HAND algorithm, but works backward from dam cells and uses recursive function 'backwardHAND'
+void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *fdirPath, const char *idPath, const char *outHtPath, const char *outIdPath)
 {
     setProperties(demPath);
 
-    GDALDataset *pDem, *pFdir, *pId, *pHeight;
+    GDALDataset *pDem, *pFdir, *pId, *pHeight, *pIdOut;
     pDem = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
     pFdir = (GDALDataset*) GDALOpen(fdirPath, GA_ReadOnly);
     pId = (GDALDataset*) GDALOpen(idPath, GA_Update);
 
+    pIdOut = pDriverTiff->Create(outIdPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pIdOut->SetGeoTransform(transform);
+    pIdOut->GetRasterBand(1)->SetNoDataValue(noData);
+    pIdOut->GetRasterBand(1)->Fill(noData);
+
     qDebug()<<"creating ht above";
-    pHeight = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
+    pHeight = pDriverTiff->Create(outHtPath, nCols, nRows, 1, GDT_Float32, NULL);
     pHeight->SetGeoTransform(transform);
     pHeight->GetRasterBand(1)->SetNoDataValue(noData);
     pHeight->GetRasterBand(1)->Fill(noData);
@@ -618,11 +637,13 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
                 pDem->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
                 pFdir->GetRasterBand(1)->RasterIO(GF_Read, j-1, i-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
 
+                //qDebug()<<*idVal<<*demVal;
                 for (int l=0; l<9; l++)
                 {
                     double startE = *demVal;
-                    //qDebug()<<"backward hand"<<i<<j<<l;
-                    backwardHAND(pFdir, pDem, pId, pHeight, j, i, startE, idVal);
+
+                    //Meat of the algorithm, a recursive function
+                    backwardHAND(pFdir, pDem, pIdOut, pHeight, j, i, startE, idVal);
                 }
             }
         }
@@ -635,6 +656,7 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     GDALClose(pDem);
     GDALClose(pFdir);
     GDALClose(pId);
+    GDALClose(pIdOut);
     GDALClose(pHeight);
     qDebug()<<"all datasets closed";
 }

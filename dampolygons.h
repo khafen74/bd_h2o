@@ -15,6 +15,7 @@ public:
     void loadDriver();
     void loadDriver_GDAL();
     void calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys);
+    void calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, const char *htAbovePath);
     void createDepthRasters();
     void createHandInput_ponds(OGRLayer *pPts);
     void createFields(OGRLayer *pLayer);
