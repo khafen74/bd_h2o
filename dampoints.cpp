@@ -523,9 +523,6 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetName("g_elev");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
-    field.SetName("d_elev");
-    field.SetType(OFTReal);
-    pLayer->CreateField(&field);
     field.SetName("slope");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
@@ -539,6 +536,14 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("ht_hi");
+    field.SetType(OFTReal);
+    field.SetName("ht_lo_mod");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("ht_mid_mod");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("ht_hi_mod");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("area_lo");
@@ -557,6 +562,33 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("vol_hi");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_lo_lp");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_mid_lp");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_hi_lp");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_lo_mp");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_mid_mp");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_hi_mp");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_lo_up");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_mid_up");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("vol_hi_up");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
 }
@@ -616,10 +648,21 @@ void DamPoints::setDemPath(const char *demPath)
 
 void DamPoints::setDamHeights(OGRFeature *pFeat, double low, double mid, double high, double max)
 {
+    double slp = pFeat->GetFieldAsDouble("slope");
+    double intercept = 4.5382, x1 = 1.3943, x2 = -26.4291;
     pFeat->SetField("ht_lo", low);
     pFeat->SetField("ht_mid", mid);
     pFeat->SetField("ht_hi", high);
     pFeat->SetField("ht_max", max);
+    pFeat->SetField("ht_lo_lp", low);
+    pFeat->SetField("ht_mid_lp", mid);
+    pFeat->SetField("ht_hi_lp", high);
+    pFeat->SetField("ht_lo_mp", exp(intercept + x1*log(low) + x2*slp));
+    pFeat->SetField("ht_mid_mp", exp(intercept + x1*log(mid) + x2*slp));
+    pFeat->SetField("ht_hi_mp", exp(intercept + x1*log(high) + x2*slp));
+    pFeat->SetField("ht_lo_mp", low);
+    pFeat->SetField("ht_mid_mp", mid);
+    pFeat->SetField("ht_hi_mp", high);
 }
 
 void DamPoints::setFacPath(const char *facPath)
