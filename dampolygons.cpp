@@ -217,9 +217,9 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, co
             {
                 nFeat = round(idRow[j]);
                 pFeature = pPts->GetFeature(nFeat);
-                dHtLo = pFeature->GetFieldAsDouble("ht_lo");
-                dHtMid = pFeature->GetFieldAsDouble("ht_mid");
-                dHtHi = pFeature->GetFieldAsDouble("ht_hi");
+                dHtLo = pFeature->GetFieldAsDouble("ht_lo_mod");
+                dHtMid = pFeature->GetFieldAsDouble("ht_mid_mod");
+                dHtHi = pFeature->GetFieldAsDouble("ht_hi_mod");
                 //qDebug()<<dHtLo<<dHtMid<<dHtHi;
 
                 if (htRow[j] < dHtLo)

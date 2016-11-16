@@ -346,6 +346,14 @@ int validate()
 //    raster.setNoData(fdirPath, 0, 1, 200);
 //    raster.setNoData(facPath, -1, 1, 2);
 
+    const char *txtPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.txt";
+    const char *statPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.tif";
+
+//    Raster raster;
+//    qDebug()<<"raster initialized";
+//    raster.fromXYZ(statPath, txtPath, 79, 79, -9999.0);
+//    qDebug()<<"raster done";
+
 /*
  * ******************************************************************************************
  * ************************* RUN TYPES WHEN USING BRAT (Initialization types)****************
@@ -357,7 +365,7 @@ int validate()
  */
 
     //Initialize surface storage model
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.82, 3);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.82, 3, statPath);
 
  /*
  * *****************************************************************************************************
@@ -372,8 +380,8 @@ int validate()
 
     // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
-    model.runFromPoints(damsPath, csvPath, 1);
-    //model.runFromPointsWithHeights(damsPath,csvPath, 3);
+    //model.runFromPoints(damsPath, csvPath, 1);
+    model.runFromPointsWithHeights(damsPath,csvPath, 3);
     //model.run();
 
     return 0;

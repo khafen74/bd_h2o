@@ -616,6 +616,81 @@ void Raster::fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int 
     CPLFree(rasVal);
 }
 
+void Raster::fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int rows, double noDataValue, int headerRows)
+{
+    loadDrivers();
+    double x, y;
+    float pred, lwr, upr;
+    double inTransform[6] = {1000.0, 1.0, 0.0, 1000, 0.0, -1.0};
+    QString qsDummy, qsX, qsY, qsPred, qsLwr, qsUpr;
+
+    GDALDataset *pDatasetNew;
+    //3 band raster
+    pDatasetNew = pDriverTiff->Create(rasterPath, cols, rows, 3, GDT_Float32, NULL);
+    pDatasetNew->SetGeoTransform(inTransform);
+    pDatasetNew->GetRasterBand(1)->Fill(noDataValue);
+    pDatasetNew->GetRasterBand(1)->SetNoDataValue(noDataValue);
+    pDatasetNew->GetRasterBand(2)->Fill(noDataValue);
+    pDatasetNew->GetRasterBand(2)->SetNoDataValue(noDataValue);
+    pDatasetNew->GetRasterBand(3)->Fill(noDataValue);
+    pDatasetNew->GetRasterBand(3)->SetNoDataValue(noDataValue);
+
+
+
+    float *rasVal = (float*) CPLMalloc(sizeof(float)*1);
+
+    QFile inFile (QString::fromUtf8(xyzPath));
+
+    if (inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+
+        QTextStream stream(&inFile);
+
+        int count = 0;
+
+        while(!stream.atEnd())
+        {
+            if (count < headerRows)
+            {
+                qsDummy = stream.readLine();
+                count++;
+            }
+            else
+            {
+                stream >> qsX;
+                x = qsX.toInt();
+                stream >> qsY;
+                y = qsY.toInt();
+                stream >> qsPred;
+                pred = qsPred.toDouble();
+                stream >> qsLwr;
+                lwr = qsLwr.toDouble();
+                stream >> qsUpr;
+                upr = qsUpr.toDouble();
+
+                *rasVal = pred;
+
+                if ((y>=0 && y<rows) && (x>=0 && x<cols))
+                {
+                    pDatasetNew->GetRasterBand(1)->RasterIO(GF_Write, x, y, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+                    *rasVal = lwr;
+                    pDatasetNew->GetRasterBand(2)->RasterIO(GF_Write, x, y, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+                    *rasVal = upr;
+                    pDatasetNew->GetRasterBand(3)->RasterIO(GF_Write, x, y, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+                }
+
+                count++;
+
+            }
+        }
+    }
+
+    setProperties(rasterPath);
+
+    GDALClose(pDatasetNew);
+    CPLFree(rasVal);
+}
+
 int Raster::getCol(double xCoord)
 {
     int col;
@@ -1510,6 +1585,25 @@ void Raster::translateToGeoTIFF(const char *inPath, const char *outPath)
         }
         outDS->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, outval, nCols, 1, GDT_Float32, 0, 0);
     }
+}
+
+double Raster::value(const char *rasterPath, int row, int col, int band)
+{
+    setProperties(rasterPath);
+    double value;
+    GDALDataset *pRaster;
+    pRaster = (GDALDataset*) GDALOpen(m_rasterPath.toStdString().c_str(), GA_ReadOnly);
+
+    float *rasVal = (float*) CPLMalloc(sizeof(float)*1);
+
+    pRaster->GetRasterBand(band)->RasterIO(GF_Read, col, row, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+
+    value = *rasVal;
+
+    GDALClose(pRaster);
+    CPLFree(rasVal);
+
+    return value;
 }
 
 double Raster::valueAtPoint(double xCoord, double yCoord)

@@ -11,8 +11,10 @@
  * *****************************************************************************************************
  */
 
-StorageModel::StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type)
+StorageModel::StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type, const char *statPath)
 {
+    qDebug()<<statPath;
+    m_statPath = statPath;
     init(bratPath, outPath, demPath, fdirPath, facPath, capacity);
     m_nType = type;
     qDebug()<<"type"<<m_nType;
@@ -108,7 +110,7 @@ void StorageModel::run()
 {
     cleanOutDir();
     qDebug()<<"starting points";
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap);
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap);
     qDebug()<<"starting polys";
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     qDebug()<<"finished polys";
@@ -126,7 +128,7 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut, int nRu
         m_nType = 2;
     }
     qDebug()<<"starting dam points";
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, nRunType);
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap, damsIn, nRunType);
     qDebug()<<"starting pond polys";
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);
@@ -142,11 +144,13 @@ void StorageModel::runFromPointsWithHeights(const char *damsIn, const char *csvO
     {
         m_nType = 2;
     }
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_outPath, bratCap, damsIn, nRunType);
+    qDebug()<<"STAT PATH"<<m_statPath;
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap, damsIn, nRunType);
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);
     setOutputPaths(pondPolys);
     createModflowInputs(pondPolys);
+    qDebug()<<"IF DAM HEIGHTS ARE ALL 0 CHECK FIELD NAME IN LINE 448 IN DAMPOINTS.CPP";
 }
 
 void StorageModel::setOutputPaths(DamPolygons pondExtents)

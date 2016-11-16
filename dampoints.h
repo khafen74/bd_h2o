@@ -13,7 +13,8 @@ class DamPoints
 {
 public:
     DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap);
-    DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap, const char *exPath, int type);
+    DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap);
+    DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap, const char *exPath, int type);
 
     void init(const char *bratPath);
     void init(const char *bratPath, const char *exPath, int type);
@@ -40,13 +41,13 @@ public:
     void setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY);
     void setOutDir(const char *outDirPath);
 
-    static void setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol);
+    static bool setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol);
 
 private:
     OGRSFDriver *m_pDriverShp;
 
     double m_modCap, m_meanDamHeight, m_confHi, m_confLo;
-    const char *m_outDir, *m_layerName, *m_demPath, *m_facPath;
+    const char *m_outDir, *m_layerName, *m_demPath, *m_facPath, *m_statPath;
     QString m_qsBratDir, m_qsBratName;
 };
 

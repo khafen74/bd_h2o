@@ -3,6 +3,18 @@
 //model at percentage (proportion 0-1.0) of existing brat capacity
 DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap)
 {
+    m_statPath = "";
+    setDemPath(demPath);
+    setFacPath(facPath);
+    setOutDir(outDirPath);
+    setBratCapacity(modCap);
+    qDebug()<<"init points";
+    init(bratPath);
+}
+
+DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap)
+{
+    m_statPath = statPath;
     setDemPath(demPath);
     setFacPath(facPath);
     setOutDir(outDirPath);
@@ -12,8 +24,9 @@ DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facP
 }
 
 //model locations of existing dams (exPath), type determines if dams are moved to flow accumulation (1) or not moved (2)
-DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap, const char *exPath, int type)
+DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap, const char *exPath, int type)
 {
+    m_statPath = statPath;
     setDemPath(demPath);
     setFacPath(facPath);
     setOutDir(outDirPath);
@@ -432,7 +445,7 @@ void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, 
     {
         pOldFeat = pExLyr->GetFeature(i);
         int nBratFID = pOldFeat->GetFieldAsInteger("ID");
-        double damHeight = pOldFeat->GetFieldAsDouble("DamHt_m"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m"
+        double damHeight = pOldFeat->GetFieldAsDouble("Dam_Height"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m"
         pBratFeat = pBratLyr->GetFeature(nBratFID);
         double slope = pBratFeat->GetFieldAsDouble(slopeField);
         OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
@@ -537,6 +550,7 @@ void DamPoints::createFields(OGRLayer *pLayer)
     pLayer->CreateField(&field);
     field.SetName("ht_hi");
     field.SetType(OFTReal);
+    pLayer->CreateField(&field);
     field.SetName("ht_lo_mod");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
@@ -589,6 +603,15 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
     field.SetName("vol_hi_up");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("diff_lo");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("diff_mid");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("diff_hi");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
 }
@@ -649,20 +672,28 @@ void DamPoints::setDemPath(const char *demPath)
 void DamPoints::setDamHeights(OGRFeature *pFeat, double low, double mid, double high, double max)
 {
     double slp = pFeat->GetFieldAsDouble("slope");
-    double intercept = 4.5382, x1 = 1.3943, x2 = -26.4291;
     pFeat->SetField("ht_lo", low);
     pFeat->SetField("ht_mid", mid);
     pFeat->SetField("ht_hi", high);
+    pFeat->SetField("ht_lo_mod", low);
+    pFeat->SetField("ht_mid_mod", mid);
+    pFeat->SetField("ht_hi_mod", high);
     pFeat->SetField("ht_max", max);
-    pFeat->SetField("ht_lo_lp", low);
-    pFeat->SetField("ht_mid_lp", mid);
-    pFeat->SetField("ht_hi_lp", high);
-    pFeat->SetField("ht_lo_mp", exp(intercept + x1*log(low) + x2*slp));
-    pFeat->SetField("ht_mid_mp", exp(intercept + x1*log(mid) + x2*slp));
-    pFeat->SetField("ht_hi_mp", exp(intercept + x1*log(high) + x2*slp));
-    pFeat->SetField("ht_lo_mp", low);
-    pFeat->SetField("ht_mid_mp", mid);
-    pFeat->SetField("ht_hi_mp", high);
+
+    if (QString::fromUtf8(m_statPath) != "")
+    {
+        Raster raster;
+        int x_lo = low/0.05 - 2, x_mid = mid/0.05 - 2, x_hi = high/0.05 - 2, y = slp/0.005;
+        pFeat->SetField("vol_lo_lp", raster.value(m_statPath, y, x_lo, 2));
+        pFeat->SetField("vol_mid_lp", raster.value(m_statPath, y, x_mid, 2));
+        pFeat->SetField("vol_hi_lp", raster.value(m_statPath, y, x_hi, 2));
+        pFeat->SetField("vol_lo_mp", raster.value(m_statPath, y, x_lo, 1));
+        pFeat->SetField("vol_mid_mp", raster.value(m_statPath, y, x_mid, 1));
+        pFeat->SetField("vol_hi_mp", raster.value(m_statPath, y, x_hi, 1));
+        pFeat->SetField("vol_lo_up", raster.value(m_statPath, y, x_lo, 3));
+        pFeat->SetField("vol_mid_up", raster.value(m_statPath, y, x_mid, 3));
+        pFeat->SetField("vol_hi_up", raster.value(m_statPath, y, x_hi, 3));
+    }
 }
 
 void DamPoints::setFacPath(const char *facPath)
@@ -672,6 +703,7 @@ void DamPoints::setFacPath(const char *facPath)
 
 void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY)
 {
+    qDebug()<<"setting field values";
     pFeat->SetField("brat_ID", bratID);
     pFeat->SetField("g_elev", groundElev);
     pFeat->SetField("slope", slope);
@@ -685,13 +717,70 @@ void DamPoints::setOutDir(const char *outDirPath)
     m_outDir = outDirPath;
 }
 
-void DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol)
+bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol)
 {
-    pFeat->SetField("area_lo", lowarea);
+    bool adjusted = true;
+    double ht_lo, htMod_lo, pred_lo, lwr_lo, upr_lo, vol_lo, diff_lo;
+    double ht_mid, htMod_mid, pred_mid, lwr_mid, upr_mid, vol_mid, diff_mid;
+    double ht_hi, htMod_hi, pred_hi, lwr_hi, upr_hi, vol_hi, diff_hi;
+    ht_lo = pFeat->GetFieldAsDouble("ht_lo");
+    htMod_lo = pFeat->GetFieldAsDouble("ht_lo_mod");
+    pred_lo = pFeat->GetFieldAsDouble("vol_lo_mp");
+    lwr_lo = pFeat->GetFieldAsDouble("vol_lo_lp");
+    upr_lo = pFeat->GetFieldAsDouble("vol_lo_up");
+    ht_mid = pFeat->GetFieldAsDouble("ht_mid");
+    htMod_mid = pFeat->GetFieldAsDouble("ht_mid_mod");
+    pred_mid = pFeat->GetFieldAsDouble("vol_mid_mp");
+    lwr_mid = pFeat->GetFieldAsDouble("vol_mid_lp");
+    upr_mid = pFeat->GetFieldAsDouble("vol_mid_up");
+    ht_hi = pFeat->GetFieldAsDouble("ht_lo");
+    htMod_hi = pFeat->GetFieldAsDouble("ht_lo_mod");
+    pred_hi = pFeat->GetFieldAsDouble("vol_lo_mp");
+    lwr_hi = pFeat->GetFieldAsDouble("vol_lo_lp");
+    upr_hi = pFeat->GetFieldAsDouble("vol_lo_up");
+    vol_lo = pFeat->GetFieldAsDouble("vol_lo");
+    vol_mid = pFeat->GetFieldAsDouble("vol_mid");
+    vol_hi = pFeat->GetFieldAsDouble("vol_hi");
+    diff_lo = pFeat->GetFieldAsDouble("diff_lo");
+    diff_mid = pFeat->GetFieldAsDouble("diff_mid");
+    diff_hi = pFeat->GetFieldAsDouble("diff_hi");
+
+    if(pred_lo == 0.0 && lwr_lo == 0.0 && upr_lo == 0.0)
+    {
+        pFeat->SetField("area_lo", lowarea);
+        pFeat->SetField("vol_lo", lowvol);
+    }
+    else if(vol_lo == 0.0)
+    {
+        if ((lowvol >= lwr_lo && lowvol <= upr_lo) || vol_lo == -3.0)
+        {
+            pFeat->SetField("area_lo", lowarea);
+            pFeat->SetField("vol_lo", lowvol);
+        }
+        else if (lowvol > upr_lo)
+        {
+            pFeat->SetField("vol_lo", -1.0);
+            pFeat->SetField("ht_lo_mod", htMod_lo - 0.05);
+            pFeat->SetField("diff_lo", lowvol - pred_lo);
+            adjusted = false;
+        }
+        else if (lowvol < lwr_lo)
+        {
+            pFeat->SetField("vol_lo", -2.0);
+            pFeat->SetField("ht_lo_mod", htMod_lo + 0.05);
+            pFeat->SetField("diff_lo", lowvol - pred_lo);
+            adjusted = false;
+        }
+    }
+    else if (vol_lo < 0.0)
+    {
+
+    }
     pFeat->SetField("area_mid", midarea);
     pFeat->SetField("area_hi", hiarea);
-    pFeat->SetField("vol_lo", lowvol);
     pFeat->SetField("vol_mid", midvol);
     pFeat->SetField("vol_hi", hivol);
+
+    return adjusted;
 }
 

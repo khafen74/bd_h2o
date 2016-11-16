@@ -7,7 +7,7 @@
 class StorageModel
 {
 public:
-    StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type);
+    StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type, const char *statPath = "");
 
     void init(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity);
 
@@ -23,7 +23,7 @@ public:
     void setOutputPaths(DamPolygons pondExtents);
 
 private:
-    const char *m_bratPath, *m_outPath, *m_demPath, *m_fdirPath, *m_facPath;
+    const char *m_bratPath, *m_outPath, *m_demPath, *m_fdirPath, *m_facPath, *m_statPath;
     QString m_absPath;
     QVector<QString> m_qvPondPaths, m_qvSurfaceDepthPaths, m_qvSurfaceWSEPaths, m_qvWSEPaths, m_qvHandIn, m_qvGWPondID, m_qvGWChange, m_qvHead;
     double bratCap;

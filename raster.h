@@ -39,6 +39,7 @@ public:
     void filterLowPass(const char *sourceRaster, const char *filterRaster);
     double findMax(const char *rasterPath);
     void fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int rows, double noDataValue, double inTransform[], int headerRows = 0);
+    void fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int rows, double noDataValue, int headerRows = 0);
     int getCol(double xCoord);
     int getCols();
     int getD8Index(int nFdir);
@@ -71,6 +72,7 @@ public:
     double sum(const char *rasterPath);
     void toXYZ(const char *rasterPath, const char *xyzPath);
     void translateToGeoTIFF(const char *inPath, const char *outPath);
+    double value(const char *rasterPath, int row, int col, int band);
     double valueAtPoint(double xCoord, double yCoord);
     double valueAtPoint(const char *rasterPath, double xCoord, double yCoord);
     void writeCellValue(double xCoord, double yCoord, double value);
