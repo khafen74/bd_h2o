@@ -614,6 +614,9 @@ void DamPoints::createFields(OGRLayer *pLayer)
     field.SetName("diff_hi");
     field.SetType(OFTReal);
     pLayer->CreateField(&field);
+    field.SetName("type");
+    field.SetType(OFTReal);
+    pLayer->CreateField(&field);
 }
 
 QString DamPoints::getBratDir()
@@ -684,6 +687,7 @@ void DamPoints::setDamHeights(OGRFeature *pFeat, double low, double mid, double 
     {
         Raster raster;
         int x_lo = low/0.05 - 2, x_mid = mid/0.05 - 2, x_hi = high/0.05 - 2, y = slp/0.005;
+        qDebug()<<high<<x_lo<<x_mid<<x_hi<<y;
         pFeat->SetField("vol_lo_lp", raster.value(m_statPath, y, x_lo, 2));
         pFeat->SetField("vol_mid_lp", raster.value(m_statPath, y, x_mid, 2));
         pFeat->SetField("vol_hi_lp", raster.value(m_statPath, y, x_hi, 2));
@@ -703,7 +707,6 @@ void DamPoints::setFacPath(const char *facPath)
 
 void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY)
 {
-    qDebug()<<"setting field values";
     pFeat->SetField("brat_ID", bratID);
     pFeat->SetField("g_elev", groundElev);
     pFeat->SetField("slope", slope);
@@ -720,66 +723,167 @@ void DamPoints::setOutDir(const char *outDirPath)
 bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol)
 {
     bool adjusted = true;
-    double ht_lo, htMod_lo, pred_lo, lwr_lo, upr_lo, vol_lo, diff_lo;
-    double ht_mid, htMod_mid, pred_mid, lwr_mid, upr_mid, vol_mid, diff_mid;
-    double ht_hi, htMod_hi, pred_hi, lwr_hi, upr_hi, vol_hi, diff_hi;
-    ht_lo = pFeat->GetFieldAsDouble("ht_lo");
-    htMod_lo = pFeat->GetFieldAsDouble("ht_lo_mod");
-    pred_lo = pFeat->GetFieldAsDouble("vol_lo_mp");
-    lwr_lo = pFeat->GetFieldAsDouble("vol_lo_lp");
-    upr_lo = pFeat->GetFieldAsDouble("vol_lo_up");
-    ht_mid = pFeat->GetFieldAsDouble("ht_mid");
-    htMod_mid = pFeat->GetFieldAsDouble("ht_mid_mod");
-    pred_mid = pFeat->GetFieldAsDouble("vol_mid_mp");
-    lwr_mid = pFeat->GetFieldAsDouble("vol_mid_lp");
-    upr_mid = pFeat->GetFieldAsDouble("vol_mid_up");
-    ht_hi = pFeat->GetFieldAsDouble("ht_lo");
-    htMod_hi = pFeat->GetFieldAsDouble("ht_lo_mod");
-    pred_hi = pFeat->GetFieldAsDouble("vol_lo_mp");
-    lwr_hi = pFeat->GetFieldAsDouble("vol_lo_lp");
-    upr_hi = pFeat->GetFieldAsDouble("vol_lo_up");
-    vol_lo = pFeat->GetFieldAsDouble("vol_lo");
-    vol_mid = pFeat->GetFieldAsDouble("vol_mid");
-    vol_hi = pFeat->GetFieldAsDouble("vol_hi");
-    diff_lo = pFeat->GetFieldAsDouble("diff_lo");
-    diff_mid = pFeat->GetFieldAsDouble("diff_mid");
-    diff_hi = pFeat->GetFieldAsDouble("diff_hi");
+    QVector<QString> qsLevels;
+    QVector<double> qvArea, qvVol;
+    qvArea.append(lowarea), qvArea.append(midarea), qvArea.append(hiarea);
+    qvVol.append(lowvol), qvVol.append(midvol), qvVol.append(hivol);
+    qsLevels.append("lo"), qsLevels.append("mid"), qsLevels.append("hi");
+    double ht, htMod, pred, lwr, upr, vol, diff;
 
-    if(pred_lo == 0.0 && lwr_lo == 0.0 && upr_lo == 0.0)
+    for (int i=0; i<qsLevels.length(); i++)
     {
-        pFeat->SetField("area_lo", lowarea);
-        pFeat->SetField("vol_lo", lowvol);
-    }
-    else if(vol_lo == 0.0)
-    {
-        if ((lowvol >= lwr_lo && lowvol <= upr_lo) || vol_lo == -3.0)
-        {
-            pFeat->SetField("area_lo", lowarea);
-            pFeat->SetField("vol_lo", lowvol);
-        }
-        else if (lowvol > upr_lo)
-        {
-            pFeat->SetField("vol_lo", -1.0);
-            pFeat->SetField("ht_lo_mod", htMod_lo - 0.05);
-            pFeat->SetField("diff_lo", lowvol - pred_lo);
-            adjusted = false;
-        }
-        else if (lowvol < lwr_lo)
-        {
-            pFeat->SetField("vol_lo", -2.0);
-            pFeat->SetField("ht_lo_mod", htMod_lo + 0.05);
-            pFeat->SetField("diff_lo", lowvol - pred_lo);
-            adjusted = false;
-        }
-    }
-    else if (vol_lo < 0.0)
-    {
+        ht = pFeat->GetFieldAsDouble(QString("ht_"+qsLevels[i]).toStdString().c_str());
+        htMod = pFeat->GetFieldAsDouble(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str());
+        pred = pFeat->GetFieldAsDouble(QString("vol_"+qsLevels[i]+"_mp").toStdString().c_str());
+        lwr = pFeat->GetFieldAsDouble(QString("vol_"+qsLevels[i]+"_lp").toStdString().c_str());
+        upr = pFeat->GetFieldAsDouble(QString("vol_"+qsLevels[i]+"_up").toStdString().c_str());
+        vol = pFeat->GetFieldAsDouble(QString("vol_"+qsLevels[i]).toStdString().c_str());
+        diff = pFeat->GetFieldAsDouble(QString("diff_"+qsLevels[i]).toStdString().c_str());
 
+        if (pred <= 0.0 && lwr <= 0.0 && upr <= 0.0)
+        {
+            pFeat->SetField("type", 1.0);
+            pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+            pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]);
+        }
+        else if (vol == 0.0)
+        {
+            if ((qvVol[i] >= lwr && qvVol[i] <= upr) || vol == -3.0)
+            {
+                pFeat->SetField("type", 2.0);
+                pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]+0.1);
+            }
+            else if (qvVol[i] > upr)
+            {
+                if (htMod > 0.1)
+                {
+                    pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -1.0);
+                    pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
+                    pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                    adjusted = false;
+                }
+                else
+                {
+                    qDebug()<<"IN ZERO: MODELED HEIGHT BELOW THRSHOLD!!!!"<<vol;
+                    pFeat->SetField("type", 3.0);
+                    pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                    pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]+0.1);
+                    pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                }
+            }
+            else if (qvVol[i] < lwr)
+            {
+                if (htMod < 4.0)
+                {
+                    pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -2.0);
+                    pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + 0.05);
+                    pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                    adjusted = false;
+                }
+                else
+                {
+                    qDebug()<<"IN ZERO: MODELED HEIGHT ABOVE THRESHOLD!!!!"<<htMod<<vol;
+                    pFeat->SetField("type", 4.0);
+                    pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                    pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]+0.1);
+                    pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                }
+            }
+        }
+        else if (vol < 0.0)
+        {
+            if (fabs(qvVol[i] - pred) < 5.0)
+            {
+                pFeat->SetField("type", 5.0);
+                pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]+0.01);
+                pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]+0.01);
+                pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+            }
+            else if (vol == -1.0)
+            {
+                if ((qvVol[i] - pred) > 0.0)
+                {
+                    if (htMod > 0.1)
+                    {
+                        qDebug()<<"NEGATIVE ONE: HEIGHT CHANGED"<<htMod - 0.05;
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -1.0);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                        adjusted = false;
+                    }
+                    else
+                    {
+                        pFeat->SetField("type", 6.0);
+                        pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                    }
+                }
+                else
+                {
+                    if(fabs(diff) > fabs(pred - qvVol[i]))
+                    {
+                        pFeat->SetField("type", 7.0);
+                        pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                    }
+                    else
+                    {
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -3.0);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + 0.05);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                        adjusted = false;
+                    }
+                }
+            }
+            else if (vol == -2.0)
+            {
+                if ((qvVol[i] - pred) < 0.0)
+                {
+                    if (htMod < 4.0)
+                    {
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -2.0);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + 0.05);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                        adjusted = false;
+                    }
+                    else
+                    {
+                        pFeat->SetField("type", 8.0);
+                        pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                    }
+                }
+                else
+                {
+                    if(fabs(diff) > fabs(pred - qvVol[i]))
+                    {
+                        pFeat->SetField("type", 9.0);
+                        pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                    }
+                    else
+                    {
+                        pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -3.0);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
+                        pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+                        adjusted = false;
+                    }
+                }
+            }
+            else if (vol == -3.0)
+            {
+                pFeat->SetField("type", 10.0);
+                pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
+                pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]);
+                pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
+            }
+        }
     }
-    pFeat->SetField("area_mid", midarea);
-    pFeat->SetField("area_hi", hiarea);
-    pFeat->SetField("vol_mid", midvol);
-    pFeat->SetField("vol_hi", hivol);
 
     return adjusted;
 }

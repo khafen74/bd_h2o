@@ -9,7 +9,7 @@ Raster_BeaverPond::Raster_BeaverPond()
 void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDALDataset *idOut, GDALDataset *out, int startX, int startY, double startE, float *pondID)
 {
     //Represents maximum dam height
-    double maxHeight = 3.25;
+    double maxHeight = 4.0;
 
     for (int i=0; i<9; i++)
     {

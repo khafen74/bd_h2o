@@ -68,15 +68,16 @@ void DamPolygons::init(DamPoints pondPts)
         Raster_BeaverPond raster_bp;
         qDebug()<<"starting recursive HAND";
         raster_bp.pondDepth_backwardHAND(m_demPath, m_fdirPath, m_qsDamID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str(), m_qsPondID.toStdString().c_str());
+
+        qDebug()<<"summarizing by pond";
+        summarizePondDepths_raster(pPts_lyr);
+        qDebug()<<"summary done";
         qDebug()<<"calculating water depth";
         calculateWaterDepth(pPts_lyr, m_qsPondID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str());
         qDebug()<<"depth done";
         raster_bp.setNoData(m_qsHi.toStdString().c_str(), -9999.0, 0.00001, 10.0);
         raster_bp.setNoData(m_qsMid.toStdString().c_str(), -9999.0, 0.00001, 10.0);
         raster_bp.setNoData(m_qsLo.toStdString().c_str(), -9999.0, 0.00001, 10.0);
-        qDebug()<<"summarizing by pond";
-        summarizePondDepths_raster(pPts_lyr);
-        qDebug()<<"summary done";
         qDebug()<<"NOTE: IF DAM HEIGHTS COME OUT AS ZERO CHAGNE LINE 435 IN DAMPOINTS.CPP";
     }
     else
@@ -130,9 +131,9 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
         pondID = pPolyFeat->GetFieldAsInteger("pond_ID");
         pDamFeat = pPts->GetFeature(pondID);
         gelev = pDamFeat->GetFieldAsDouble("g_elev");
-        lo = gelev + pDamFeat->GetFieldAsDouble("ht_lo");
-        mid = gelev + pDamFeat->GetFieldAsDouble("ht_mid");
-        hi = gelev + pDamFeat->GetFieldAsDouble("ht_hi");
+        lo = gelev + pDamFeat->GetFieldAsDouble("ht_lo_mod");
+        mid = gelev + pDamFeat->GetFieldAsDouble("ht_mid_mod");
+        hi = gelev + pDamFeat->GetFieldAsDouble("ht_hi_mod");
         qDebug()<<pondID<<" of "<<nPonds;
         int left = rasDem.getCol(bound.MinX)-1;
         int right = rasDem.getCol(bound.MaxX)+1;;
@@ -561,6 +562,7 @@ void DamPolygons::setRasterPaths()
 
 void DamPolygons::summarizePondDepths(OGRLayer *pPts)
 {
+    bool adjusted = true;
     int nDams = pPts->GetFeatureCount();
     QVector<double> areasLo(nDams), areasMid(nDams), areasHi(nDams), volumesLo(nDams, 0.0), volumesMid(nDams, 0.0), volumesHi(nDams, 0.0);
     QVector<int> pondIDs(nDams), countsLo(nDams, 0), countsMid(nDams, 0), countsHi(nDams, 0);
@@ -655,9 +657,18 @@ void DamPolygons::summarizePondDepths(OGRLayer *pPts)
 
 void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
 {
+    bool adjusted = true;
     int nDams = pPts->GetFeatureCount();
     QVector<double> areasLo(nDams), areasMid(nDams), areasHi(nDams), volumesLo(nDams, 0.0), volumesMid(nDams, 0.0), volumesHi(nDams, 0.0);
     QVector<int> pondIDs(nDams), countsLo(nDams, 0), countsMid(nDams, 0), countsHi(nDams, 0);
+
+    qDebug()<<"calculating water depth";
+    calculateWaterDepth(pPts, m_qsPondID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str());
+    qDebug()<<"depth done";
+    Raster_BeaverPond raster_bp;
+    raster_bp.setNoData(m_qsHi.toStdString().c_str(), -9999.0, 0.00001, 10.0);
+    raster_bp.setNoData(m_qsMid.toStdString().c_str(), -9999.0, 0.00001, 10.0);
+    raster_bp.setNoData(m_qsLo.toStdString().c_str(), -9999.0, 0.00001, 10.0);
 
     for (int i=0; i<nDams; i++)
     {
@@ -673,7 +684,6 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
     pMid = (GDALDataset*) GDALOpen(m_qsMid.toStdString().c_str(), GA_ReadOnly);
     pHi = (GDALDataset*) GDALOpen(m_qsHi.toStdString().c_str(), GA_ReadOnly);
     pPond = (GDALDataset*) GDALOpen(m_qsPondID.toStdString().c_str(), GA_ReadOnly);
-
 
     float *loVals = (float*) CPLMalloc(sizeof(float) * pLo->GetRasterXSize());
     float *midVals = (float*) CPLMalloc(sizeof(float) * pLo->GetRasterXSize());
@@ -723,7 +733,11 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
         OGRFeature *pDamFeature;
         pDamFeature = pPts->GetFeature(pondIDs[i]);
         //qDebug()<<pondIDs[i]<<areasLo[i]<<areasMid[i]<<areasHi[i]<<volumesLo[i]<<volumesMid[i]<<volumesHi[i];
-        DamPoints::setPondAttributes(pDamFeature, areasLo[i], areasMid[i], areasHi[i], volumesLo[i], volumesMid[i], volumesHi[i]);
+        if (!DamPoints::setPondAttributes(pDamFeature, areasLo[i], areasMid[i], areasHi[i], volumesLo[i], volumesMid[i], volumesHi[i]))
+        {
+            adjusted = false;
+        }
+
         pPts->SetFeature(pDamFeature);
         OGRFeature::DestroyFeature(pDamFeature);
     }
@@ -737,6 +751,11 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
     GDALClose(pMid);
     GDALClose(pHi);
     GDALClose(pPond);
+
+    if (!adjusted)
+    {
+        summarizePondDepths_raster(pPts);
+    }
 }
 
 void DamPolygons::summarizeReachDepths(OGRLayer *pPts)
