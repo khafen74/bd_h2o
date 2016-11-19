@@ -445,7 +445,7 @@ void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, 
     {
         pOldFeat = pExLyr->GetFeature(i);
         int nBratFID = pOldFeat->GetFieldAsInteger("ID");
-        double damHeight = pOldFeat->GetFieldAsDouble("Dam_Height"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m"
+        double damHeight = pOldFeat->GetFieldAsDouble("DamHt_m"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m"
         pBratFeat = pBratLyr->GetFeature(nBratFID);
         double slope = pBratFeat->GetFieldAsDouble(slopeField);
         OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
@@ -688,6 +688,22 @@ void DamPoints::setDamHeights(OGRFeature *pFeat, double low, double mid, double 
         Raster raster;
         int x_lo = low/0.05 - 2, x_mid = mid/0.05 - 2, x_hi = high/0.05 - 2, y = slp/0.005;
         qDebug()<<high<<x_lo<<x_mid<<x_hi<<y;
+//        if (x_lo == 0)
+//        {
+//            x_lo = 1;
+//        }
+//        if (x_mid == 0)
+//        {
+//            x_mid = 1;
+//        }
+//        if (x_hi == 0)
+//        {
+//            x_hi = 1;
+//        }
+//        if (y == 0)
+//        {
+//            y = 1;
+//        }
         pFeat->SetField("vol_lo_lp", raster.value(m_statPath, y, x_lo, 2));
         pFeat->SetField("vol_mid_lp", raster.value(m_statPath, y, x_mid, 2));
         pFeat->SetField("vol_hi_lp", raster.value(m_statPath, y, x_hi, 2));
@@ -756,7 +772,7 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
             }
             else if (qvVol[i] > upr)
             {
-                if (htMod > 0.1)
+                if (htMod > 0.05)
                 {
                     pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -1.0);
                     pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
@@ -765,7 +781,6 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
                 }
                 else
                 {
-                    qDebug()<<"IN ZERO: MODELED HEIGHT BELOW THRSHOLD!!!!"<<vol;
                     pFeat->SetField("type", 3.0);
                     pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
                     pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]+0.1);
@@ -783,7 +798,7 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
                 }
                 else
                 {
-                    qDebug()<<"IN ZERO: MODELED HEIGHT ABOVE THRESHOLD!!!!"<<htMod<<vol;
+                    //qDebug()<<"IN ZERO: MODELED HEIGHT ABOVE THRESHOLD!!!!"<<htMod<<vol;
                     pFeat->SetField("type", 4.0);
                     pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);
                     pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), qvVol[i]+0.1);
@@ -804,9 +819,9 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
             {
                 if ((qvVol[i] - pred) > 0.0)
                 {
-                    if (htMod > 0.1)
+                    if (htMod > 0.05)
                     {
-                        qDebug()<<"NEGATIVE ONE: HEIGHT CHANGED"<<htMod - 0.05;
+                        //qDebug()<<"NEGATIVE ONE: HEIGHT CHANGED"<<htMod - 0.05;
                         pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -1.0);
                         pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
                         pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);

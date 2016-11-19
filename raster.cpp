@@ -621,7 +621,7 @@ void Raster::fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int 
     loadDrivers();
     double x, y;
     float pred, lwr, upr;
-    double inTransform[6] = {1000.0, 1.0, 0.0, 1000, 0.0, -1.0};
+    double inTransform[6] = {1000.0, 1.0, 0.0, 1000.0, 0.0, -1.0};
     QString qsDummy, qsX, qsY, qsPred, qsLwr, qsUpr;
 
     GDALDataset *pDatasetNew;
@@ -669,14 +669,15 @@ void Raster::fromXYZ(const char *rasterPath, const char *xyzPath, int cols, int 
                 upr = qsUpr.toDouble();
 
                 *rasVal = pred;
+                qDebug()<<x<<y;
 
                 if ((y>=0 && y<rows) && (x>=0 && x<cols))
                 {
-                    pDatasetNew->GetRasterBand(1)->RasterIO(GF_Write, x, y, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+                    pDatasetNew->GetRasterBand(1)->RasterIO(GF_Write, x-1, y-1, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
                     *rasVal = lwr;
-                    pDatasetNew->GetRasterBand(2)->RasterIO(GF_Write, x, y, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+                    pDatasetNew->GetRasterBand(2)->RasterIO(GF_Write, x-1, y-1, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
                     *rasVal = upr;
-                    pDatasetNew->GetRasterBand(3)->RasterIO(GF_Write, x, y, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+                    pDatasetNew->GetRasterBand(3)->RasterIO(GF_Write, x-1, y-1, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
                 }
 
                 count++;
