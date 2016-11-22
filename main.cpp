@@ -333,13 +333,13 @@ int validate()
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out/comparison.csv";
 
     //Recursive with Logan HUC 8 inputs
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestLogan10m/01_shpIn/brat.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestLogan10m/02_rasIn/dem_vb.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestLogan10m/02_rasIn/fdir10m_vb.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestLogan10m/02_rasIn/fac10m_vb.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestLogan10m/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestLogan10m/01_shpIn/dams_20160629.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestLogan10m/03_out/comparison.csv";
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan25/01_shpIn/brat.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan25/02_rasIn/dem_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan25/02_rasIn/fdir10m_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan25/02_rasIn/fac10m_vb.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan25/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan25/01_shpIn/dams_20160629.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan25/03_out/comparison.csv";
 
     //Beaver Creek 10m Inputs
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/05_HUC12/BeaverCreek/01_shpIn/brat.shp";
@@ -374,7 +374,7 @@ int validate()
  */
 
     //Initialize surface storage model with statistical correction
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.82, 3, statPath);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.25, 3, statPath);
     //Initialize surface storage model without statistical correction
     //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.82, 3);
 
@@ -391,9 +391,9 @@ int validate()
 
     // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
-    model.runFromPoints(damsPath, csvPath, 1);
+    //model.runFromPoints(damsPath, csvPath, 1);
     //model.runFromPointsWithHeights(damsPath,csvPath, 3);
-    //model.run();
+    model.run();
 
     return 0;
 }

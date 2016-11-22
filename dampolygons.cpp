@@ -189,10 +189,11 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
 
 void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, const char *htAbovePath)
 {
+    qDebug()<<"creating depth rasters";
     createDepthRasters();
+    qDebug()<<"depth rasters created";
 
     GDALDataset *pDepLo, *pDepMid, *pDepHi, *pId, *pHt;
-    OGRFeature *pFeature;
 
     pId = (GDALDataset*) GDALOpen(pondIdPath, GA_ReadOnly);
     pHt = (GDALDataset*) GDALOpen(htAbovePath, GA_ReadOnly);
@@ -200,8 +201,11 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, co
     pDepMid = (GDALDataset*) GDALOpen(m_qsMid.toStdString().c_str(), GA_Update);
     pDepHi = (GDALDataset*) GDALOpen(m_qsHi.toStdString().c_str(), GA_Update);
 
+    qDebug()<<"allocating id";
     float *idRow = (float*) CPLMalloc(sizeof(float)*pId->GetRasterXSize());
-    float *htRow = (float*) CPLMalloc(sizeof(float)*pId->GetRasterXSize());
+    qDebug()<<"allocating ht";
+    float *htRow = (float*) CPLMalloc(sizeof(float)*pHt->GetRasterXSize());
+    qDebug()<<"allocating write";
     float *writeVal = (float*) CPLMalloc(sizeof(float)*1);
 
     int nFeat;
@@ -209,40 +213,49 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, co
 
     for (int i=0; i<pId->GetRasterYSize(); i++)
     {
+        qDebug()<<"reading id";
         pId->GetRasterBand(1)->RasterIO(GF_Read, 0, i, pId->GetRasterXSize(), 1, idRow, pId->GetRasterXSize(), 1, GDT_Float32, 0, 0);
+        qDebug()<<"reading ht";
         pHt->GetRasterBand(1)->RasterIO(GF_Read, 0, i, pHt->GetRasterXSize(), 1, htRow, pHt->GetRasterXSize(), 1, GDT_Float32, 0, 0);
+        qDebug()<<"row"<<i<<pId->GetRasterXSize()<<pHt->GetRasterXSize();
 
         for (int j=0; j<pId->GetRasterXSize(); j++)
         {
             if (idRow[j] >= 0.0)
             {
                 nFeat = round(idRow[j]);
-                pFeature = pPts->GetFeature(nFeat);
+                OGRFeature *pFeature = pPts->GetFeature(nFeat);
                 dHtLo = pFeature->GetFieldAsDouble("ht_lo_mod");
                 dHtMid = pFeature->GetFieldAsDouble("ht_mid_mod");
                 dHtHi = pFeature->GetFieldAsDouble("ht_hi_mod");
-                //qDebug()<<dHtLo<<dHtMid<<dHtHi;
+                OGRFeature::DestroyFeature(pFeature);
+                qDebug()<<"values calculated"<<dHtLo<<dHtMid<<dHtHi;
 
                 if (htRow[j] < dHtLo)
                 {
                     *writeVal = dHtLo - htRow[j];
+                    qDebug()<<"writing 1";
                     pDepLo->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
+                    qDebug()<<"1 done";
                 }
                 if (htRow[j] < dHtMid)
                 {
                     *writeVal = dHtMid - htRow[j];
+                    qDebug()<<"writing 2";
                     pDepMid->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
+                    qDebug()<<"2 done";
                 }
                 if (htRow[j] < dHtHi)
                 {
                     *writeVal = dHtHi - htRow[j];
+                    qDebug()<<"writing 3";
                     pDepHi->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
+                    qDebug()<<"3 done";
                 }
             }
         }
+        qDebug()<<"row done";
     }
-
-    OGRFeature::DestroyFeature(pFeature);
 
     CPLFree(idRow);
     CPLFree(htRow);

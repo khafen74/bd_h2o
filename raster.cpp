@@ -1633,8 +1633,9 @@ double Raster::valueAtPoint(double xCoord, double yCoord)
 
     value = *rasVal;
 
-    GDALClose(pRaster);
     CPLFree(rasVal);
+
+    GDALClose(pRaster);
 
     return value;
 }
