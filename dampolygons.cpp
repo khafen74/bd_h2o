@@ -70,6 +70,7 @@ void DamPolygons::init(DamPoints pondPts)
         raster_bp.pondDepth_backwardHAND(m_demPath, m_fdirPath, m_qsDamID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str(), m_qsPondID.toStdString().c_str());
 
         qDebug()<<"summarizing by pond";
+        m_nSummaryIter = 0;
         summarizePondDepths_raster(pPts_lyr);
         qDebug()<<"summary done";
         qDebug()<<"calculating water depth";
@@ -189,23 +190,24 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, OGRLayer *pPolys)
 
 void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, const char *htAbovePath)
 {
-    qDebug()<<"creating depth rasters";
+    //qDebug()<<"creating depth rasters";
     createDepthRasters();
-    qDebug()<<"depth rasters created";
+    //qDebug()<<"depth rasters created";
 
-    GDALDataset *pDepLo, *pDepMid, *pDepHi, *pId, *pHt;
+    GDALDataset *pDepLo, *pDepMid, *pDepHi, *pId, *pHt, *pDem;
 
+    pDem = (GDALDataset*) GDALOpen(pondIdPath, GA_ReadOnly);
     pId = (GDALDataset*) GDALOpen(pondIdPath, GA_ReadOnly);
     pHt = (GDALDataset*) GDALOpen(htAbovePath, GA_ReadOnly);
     pDepLo = (GDALDataset*) GDALOpen(m_qsLo.toStdString().c_str(), GA_Update);
     pDepMid = (GDALDataset*) GDALOpen(m_qsMid.toStdString().c_str(), GA_Update);
     pDepHi = (GDALDataset*) GDALOpen(m_qsHi.toStdString().c_str(), GA_Update);
 
-    qDebug()<<"allocating id";
+    //qDebug()<<"allocating id";
     float *idRow = (float*) CPLMalloc(sizeof(float)*pId->GetRasterXSize());
-    qDebug()<<"allocating ht";
+    //qDebug()<<"allocating ht";
     float *htRow = (float*) CPLMalloc(sizeof(float)*pHt->GetRasterXSize());
-    qDebug()<<"allocating write";
+    //qDebug()<<"allocating write";
     float *writeVal = (float*) CPLMalloc(sizeof(float)*1);
 
     int nFeat;
@@ -213,11 +215,11 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, co
 
     for (int i=0; i<pId->GetRasterYSize(); i++)
     {
-        qDebug()<<"reading id";
+        //qDebug()<<"reading id";
         pId->GetRasterBand(1)->RasterIO(GF_Read, 0, i, pId->GetRasterXSize(), 1, idRow, pId->GetRasterXSize(), 1, GDT_Float32, 0, 0);
-        qDebug()<<"reading ht";
+        //qDebug()<<"reading ht";
         pHt->GetRasterBand(1)->RasterIO(GF_Read, 0, i, pHt->GetRasterXSize(), 1, htRow, pHt->GetRasterXSize(), 1, GDT_Float32, 0, 0);
-        qDebug()<<"row"<<i<<pId->GetRasterXSize()<<pHt->GetRasterXSize();
+        //qDebug()<<"row"<<i<<pId->GetRasterXSize()<<pHt->GetRasterXSize();
 
         for (int j=0; j<pId->GetRasterXSize(); j++)
         {
@@ -229,32 +231,32 @@ void DamPolygons::calculateWaterDepth(OGRLayer *pPts, const char *pondIdPath, co
                 dHtMid = pFeature->GetFieldAsDouble("ht_mid_mod");
                 dHtHi = pFeature->GetFieldAsDouble("ht_hi_mod");
                 OGRFeature::DestroyFeature(pFeature);
-                qDebug()<<"values calculated"<<dHtLo<<dHtMid<<dHtHi;
+                //qDebug()<<"values calculated"<<dHtLo<<dHtMid<<dHtHi;
 
                 if (htRow[j] < dHtLo)
                 {
                     *writeVal = dHtLo - htRow[j];
-                    qDebug()<<"writing 1";
+                    //qDebug()<<"writing 1";
                     pDepLo->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
-                    qDebug()<<"1 done";
+                    //qDebug()<<"1 done";
                 }
                 if (htRow[j] < dHtMid)
                 {
                     *writeVal = dHtMid - htRow[j];
-                    qDebug()<<"writing 2";
+                    //qDebug()<<"writing 2";
                     pDepMid->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
-                    qDebug()<<"2 done";
+                    //qDebug()<<"2 done";
                 }
                 if (htRow[j] < dHtHi)
                 {
                     *writeVal = dHtHi - htRow[j];
-                    qDebug()<<"writing 3";
+                    //qDebug()<<"writing 3";
                     pDepHi->GetRasterBand(1)->RasterIO(GF_Write, j, i, 1, 1, writeVal, 1, 1, GDT_Float32, 0, 0);
-                    qDebug()<<"3 done";
+                    //qDebug()<<"3 done";
                 }
             }
         }
-        qDebug()<<"row done";
+        //qDebug()<<"row done";
     }
 
     CPLFree(idRow);
@@ -277,6 +279,7 @@ void DamPolygons::createDepthRasters()
 
     pDemDS = (GDALDataset*) GDALOpen(m_demPath, GA_ReadOnly);
     pDemDS->GetGeoTransform(geot);
+    const char* proj = pDemDS->GetProjectionRef();
 
     m_cellWidth = geot[1];
     m_cellHeight = fabs(geot[5]);
@@ -285,36 +288,42 @@ void DamPolygons::createDepthRasters()
     pLoDS->SetGeoTransform(geot);
     pLoDS->GetRasterBand(1)->Fill(-9999.0);
     pLoDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    pLoDS->SetProjection(proj);
     GDALClose(pLoDS);
 
     pMidDS = m_pDriverTiff->Create(m_qsMid.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
     pMidDS->SetGeoTransform(geot);
     pMidDS->GetRasterBand(1)->Fill(-9999.0);
     pMidDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    pMidDS->SetProjection(proj);
     GDALClose(pMidDS);
 
     pHiDS = m_pDriverTiff->Create(m_qsHi.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
     pHiDS->SetGeoTransform(geot);
     pHiDS->GetRasterBand(1)->Fill(-9999.0);
     pHiDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    pHiDS->SetProjection(proj);
     GDALClose(pHiDS);
 
     pLoPondDS = m_pDriverTiff->Create(m_qsLoPond.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
     pLoPondDS->SetGeoTransform(geot);
     pLoPondDS->GetRasterBand(1)->Fill(-9999.0);
     pLoPondDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    pLoPondDS->SetProjection(proj);
     GDALClose(pLoPondDS);
 
     pMidPondDS = m_pDriverTiff->Create(m_qsMidPond.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
     pMidPondDS->SetGeoTransform(geot);
     pMidPondDS->GetRasterBand(1)->Fill(-9999.0);
     pMidPondDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    pMidPondDS->SetProjection(proj);
     GDALClose(pMidPondDS);
 
     pHiPondDS = m_pDriverTiff->Create(m_qsHiPond.toStdString().c_str(), pDemDS->GetRasterXSize(), pDemDS->GetRasterYSize(), 1, GDT_Float32, NULL);
     pHiPondDS->SetGeoTransform(geot);
     pHiPondDS->GetRasterBand(1)->Fill(-9999.0);
     pHiPondDS->GetRasterBand(1)->SetNoDataValue(-9999.0);
+    pHiPondDS->SetProjection(proj);
     GDALClose(pHiPondDS);
 
     GDALClose(pDemDS);
@@ -575,7 +584,6 @@ void DamPolygons::setRasterPaths()
 
 void DamPolygons::summarizePondDepths(OGRLayer *pPts)
 {
-    bool adjusted = true;
     int nDams = pPts->GetFeatureCount();
     QVector<double> areasLo(nDams), areasMid(nDams), areasHi(nDams), volumesLo(nDams, 0.0), volumesMid(nDams, 0.0), volumesHi(nDams, 0.0);
     QVector<int> pondIDs(nDams), countsLo(nDams, 0), countsMid(nDams, 0), countsHi(nDams, 0);
@@ -675,9 +683,9 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
     QVector<double> areasLo(nDams), areasMid(nDams), areasHi(nDams), volumesLo(nDams, 0.0), volumesMid(nDams, 0.0), volumesHi(nDams, 0.0);
     QVector<int> pondIDs(nDams), countsLo(nDams, 0), countsMid(nDams, 0), countsHi(nDams, 0);
 
-    qDebug()<<"calculating water depth";
+    //qDebug()<<"calculating water depth";
     calculateWaterDepth(pPts, m_qsPondID.toStdString().c_str(), m_qsHtAbove.toStdString().c_str());
-    qDebug()<<"depth done";
+    //qDebug()<<"depth done";
     Raster_BeaverPond raster_bp;
     raster_bp.setNoData(m_qsHi.toStdString().c_str(), -9999.0, 0.00001, 10.0);
     raster_bp.setNoData(m_qsMid.toStdString().c_str(), -9999.0, 0.00001, 10.0);
@@ -735,6 +743,7 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
         }
     }
 
+    int count = 0;
     for (int i=0; i<pondIDs.length(); i++)
     {
         areasLo[i] = countsLo[i]*m_cellWidth*m_cellHeight;
@@ -749,11 +758,14 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
         if (!DamPoints::setPondAttributes(pDamFeature, areasLo[i], areasMid[i], areasHi[i], volumesLo[i], volumesMid[i], volumesHi[i]))
         {
             adjusted = false;
+            count++;
         }
 
         pPts->SetFeature(pDamFeature);
         OGRFeature::DestroyFeature(pDamFeature);
     }
+    m_nSummaryIter++;
+    qDebug()<<"Summary iteration"<<m_nSummaryIter<<": "<<count<<"ponds to adjust";
 
     CPLFree(loVals);
     CPLFree(midVals);
@@ -765,6 +777,10 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
     GDALClose(pHi);
     GDALClose(pPond);
 
+    if (m_nSummaryIter > 80)
+    {
+        adjusted = true;
+    }
     if (!adjusted)
     {
         summarizePondDepths_raster(pPts);

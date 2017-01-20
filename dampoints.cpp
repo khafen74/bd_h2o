@@ -15,6 +15,19 @@ DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facP
 DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap)
 {
     m_statPath = statPath;
+    m_nDamPlace = 1;
+    setDemPath(demPath);
+    setFacPath(facPath);
+    setOutDir(outDirPath);
+    setBratCapacity(modCap);
+    qDebug()<<"init points";
+    init(bratPath);
+}
+
+DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap, int nDamPlaceType)
+{
+    m_statPath = statPath;
+    m_nDamPlace = nDamPlaceType;
     setDemPath(demPath);
     setFacPath(facPath);
     setOutDir(outDirPath);
@@ -60,7 +73,14 @@ void DamPoints::init(const char *bratPath)
     //create fields for modeled dam points
     createFields(pDamsOut);
     //create modeled dam points based on BRAT estimates
-    createDamPoints_BRAT(pBratIn, pDamsOut);
+    if (m_nDamPlace == 1)
+    {
+        createDamPoints_BRAT(pBratIn, pDamsOut);
+    }
+    else if (m_nDamPlace == 2)
+    {
+
+    }
 
     OGRDataSource::DestroyDataSource(pInDs);
     OGRDataSource::DestroyDataSource(pOutDs);
@@ -179,6 +199,116 @@ void DamPoints::compareArea(const char *damsIn, const char *csvOut)
 }
 
 void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
+{
+    const char *slopeField = "iGeo_Slope";
+    const char *densField = "oCC_EX";
+    double sampleDist = 50.0;
+    int nDams = 0;
+    long lastFID = -9999;
+
+    //BRAT line segment
+    OGRFeature *pBratFeat;
+    //feature for modeled dams layer
+    qDebug()<<"loading ogr feature";
+    OGRFeature *pDamFeat = OGRFeature::CreateFeature(pDamsLyr->GetLayerDefn());
+    qDebug()<<"done";
+    Raster raster_dem;
+    qDebug()<<"counting features";
+    int nFeatures = pBratLyr->GetFeatureCount();
+    qDebug()<<"features"<<nFeatures;
+
+    //loop through all features in BRAT layer
+    for (int i=0; i<nFeatures; i++)
+    {
+        //qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
+        int nDamCount = 0, nErrCount = 0;
+        double length, damDens, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
+        OGRPoint point1, point2;
+        //get BRAT feature
+        pBratFeat = pBratLyr->GetFeature(i);;
+        OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
+        //geometry of BRAT feature
+        OGRLineString *pBratLine = (OGRLineString*) pGeom;
+        int nPoints = pBratLine->getNumPoints();
+
+        //start and end points of BRAT segment, used to calculate azimuth
+        point1.setX(pBratLine->getX(0));
+        point1.setY(pBratLine->getY(0));
+        point2.setX(pBratLine->getX(nPoints-1));
+        point2.setY(pBratLine->getY(nPoints-1));
+
+        //length of BRAT segment
+        length = pBratLine->get_Length();
+        //BRAT existing capacity (dams/km)
+        damDens = pBratFeat->GetFieldAsDouble(densField);
+        //slope of BRAT segment
+        slope = pBratFeat->GetFieldAsDouble(slopeField);
+
+        //calculate number of dams from dam density, segment, length, and percent of capacity (m_modCap)
+        nDamCount = round(length * (damDens/1000.0) * m_modCap);
+        //qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
+
+        if (nDamCount > 0)
+        {
+            //distance between dams
+            spacing = length / (nDamCount*1.0);
+        }
+        else
+        {
+            spacing = 0.0;
+        }
+        //calculate azimuth (from start to end) of BRAT segment
+        azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
+        //end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
+        //find elevation on stream network closes to dam point (on line perpendicular to BRAT segment)
+        end_elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
+        nDams += nDamCount;
+
+        //create a point for each dam to be modeled on BRAT segment
+        for (int j=0; j<nDamCount; j++)
+        {
+            //location of modeled dam
+            OGRPoint damPoint;
+            //location on BRAT segment
+            double pointDist = length - (spacing * (j * 1.0));
+            //random sample of 1000 heights from dam height distribtuion
+            Statistics lognormal(Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42), RDT_lnorm);
+            //get 2.5% and 97.5% quantiles
+            lognormal.calcCredibleInterval(CI_95);
+            //set point location on BRAT segment
+            pBratLine->Value(pointDist, &damPoint);
+            //location of dam point
+            double x = damPoint.getX();
+            double y = damPoint.getY();
+            //move dam point to lowest cross sectional elevation
+            //elev = raster_dem.sampleAlongLine_LowVal(m_demPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
+            //move dam point to stream network raster
+            elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, damPoint.getX(), damPoint.getY(), azimuthStart, sampleDist, x, y);
+            //set location of point
+            damPoint.setX(x);
+            damPoint.setY(y);
+            //set field values and dam heights
+            setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
+            setDamHeights(pDamFeat, lognormal.getQuantile(0.025), lognormal.getQuantile(0.5), lognormal.getQuantile(0.975), VectorOps::max(lognormal.getData()));
+
+            pDamFeat->SetGeometry(&damPoint);
+            //qDebug()<<"Field Values "<<i<<elev<<slope<<Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy)<<x<<y;
+            //make sure point is located inside model domain (if the elevation value is NoData, outside domain)
+            if (elev > 0.0)
+            {
+                if (pDamsLyr->CreateFeature(pDamFeat) != OGRERR_NONE)
+                {
+                    nErrCount++;
+                    qDebug()<<"error writing dam point "<<nErrCount;
+                }
+            }
+        }
+    }
+    OGRFeature::DestroyFeature(pDamFeat);
+    OGRFeature::DestroyFeature(pBratFeat);
+}
+
+void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 {
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
@@ -445,7 +575,7 @@ void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, 
     {
         pOldFeat = pExLyr->GetFeature(i);
         int nBratFID = pOldFeat->GetFieldAsInteger("ID");
-        double damHeight = pOldFeat->GetFieldAsDouble("DamHt_m"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m"
+        double damHeight = pOldFeat->GetFieldAsDouble("d_ht_m"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m", for volume comparison "d_ht_m"
         pBratFeat = pBratLyr->GetFeature(nBratFID);
         double slope = pBratFeat->GetFieldAsDouble(slopeField);
         OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
@@ -874,7 +1004,7 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
                 }
                 else
                 {
-                    if(fabs(diff) > fabs(pred - qvVol[i]))
+                    if(fabs(diff) >= fabs(pred - qvVol[i]))
                     {
                         pFeat->SetField("type", 9.0);
                         pFeat->SetField(QString("area_"+qsLevels[i]).toStdString().c_str(), qvArea[i]);

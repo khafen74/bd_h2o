@@ -42,7 +42,7 @@ private:
     OGRSFDriver *m_pDriverShp;
     GDALDriver *m_pDriverTiff;
 
-    int m_nType;
+    int m_nType, m_nSummaryIter;
     double m_maxDist, m_cellWidth, m_cellHeight;
     const char *m_outDir, *m_demPath, *m_layerName, *m_fdirPath;
     QString m_qsMid, m_qsLo, m_qsHi,

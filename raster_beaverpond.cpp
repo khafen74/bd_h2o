@@ -161,6 +161,7 @@ void Raster_BeaverPond::head(const char *demPath, const char *facPath, const cha
     pFacDS = (GDALDataset*) GDALOpen(facPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pOutDS->SetGeoTransform(transform);
+    pOutDS->SetProjection(pDemDS->GetProjectionRef());
     pOutDS->GetRasterBand(1)->Fill(-9999);
     pOutDS->GetRasterBand(1)->SetNoDataValue(-9999);
     float *eVal = (float*) CPLMalloc(sizeof(float)*nCols);
@@ -204,6 +205,7 @@ void Raster_BeaverPond::head(const char *demPath, const char *facPath, const cha
     pWetDS = (GDALDataset*) GDALOpen(wetPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pOutDS->SetGeoTransform(transform);
+    pOutDS->SetProjection(pDemDS->GetProjectionRef());
     pOutDS->GetRasterBand(1)->Fill(-9999);
     pOutDS->GetRasterBand(1)->SetNoDataValue(-9999);
     float *eVal = (float*) CPLMalloc(sizeof(float)*nCols);

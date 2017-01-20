@@ -106,11 +106,19 @@ void StorageModel::createModflowInputs(DamPolygons pondExtents)
     }
 }
 
-void StorageModel::run()
+/*
+ * *****************************************************************************************************
+ * ************************* DAM PLACEMENT RUN OPTIONS *************************************************
+ * *****************************************************************************************************
+ * type = 1: Distribute evenly according to BRAT density
+ * type = 2: Add complexes to best habitats first, then continue to lesser quality habitats
+ * *****************************************************************************************************
+ */
+void StorageModel::run(int nPlaceType)
 {
     cleanOutDir();
     qDebug()<<"starting points";
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap);
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap, nPlaceType);
     qDebug()<<"starting polys";
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     qDebug()<<"finished polys";

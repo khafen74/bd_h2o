@@ -14,6 +14,7 @@ class DamPoints
 public:
     DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *outDirPath, double modCap);
     DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap);
+    DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap, int nDamPlaceType);
     DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap, const char *exPath, int type);
 
     void init(const char *bratPath);
@@ -21,6 +22,7 @@ public:
 
     void compareArea(const char *damsIn, const char *csvOut);
     void createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
+    void createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
     void createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createDamPoints_CopyLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
@@ -46,6 +48,7 @@ public:
 private:
     OGRSFDriver *m_pDriverShp;
 
+    int m_nDamPlace;
     double m_modCap, m_meanDamHeight, m_confHi, m_confLo;
     const char *m_outDir, *m_layerName, *m_demPath, *m_facPath, *m_statPath;
     QString m_qsBratDir, m_qsBratName;

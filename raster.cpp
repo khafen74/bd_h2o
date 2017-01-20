@@ -78,6 +78,7 @@ void Raster::add(const char *addPath, const char *outPath)
     pAddDs = (GDALDataset*) GDALOpen(addPath, GA_ReadOnly);
     pOutDS = pDriverTiff->Create(outPath, nCols, nRows, 1, GDT_Float32, NULL);
     pOutDS->SetGeoTransform(transform);
+    pOutDS->SetProjection(pSourceDS->GetProjectionRef());
     pOutDS->GetRasterBand(1)->SetNoDataValue(noData);
     pOutDS->GetRasterBand(1)->Fill(noData);
 

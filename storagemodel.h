@@ -17,7 +17,7 @@ public:
     void cleanOutDir();
     void createHandInputs();
     void createModflowInputs(DamPolygons pondExtents);
-    void run();
+    void run(int nPlaceType);
     void runFromPoints(const char *damsIn, const char *csvOut, int nRunType=1);
     void runFromPointsWithHeights(const char *damsIn, const char *csvOut, int nRunType=3);
     void setOutputPaths(DamPolygons pondExtents);
