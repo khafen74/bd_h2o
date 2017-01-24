@@ -11,7 +11,7 @@ double VectorOps::max(QVector<double> data)
 
     max = data[0];
 
-    for (int i=0 ; i<data.length(); i++)
+    for (int i=0; i<data.length(); i++)
     {
         if (data[i] > max)
         {
@@ -20,5 +20,17 @@ double VectorOps::max(QVector<double> data)
     }
 
     return max;
+}
+
+double VectorOps::sum(QVector<double> data)
+{
+    double sum = 0.0;
+
+    for (int i=0; i<data.length(); i++)
+    {
+        sum += data[i];
+    }
+
+    return sum;
 }
 

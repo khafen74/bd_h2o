@@ -234,13 +234,13 @@ int validate()
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Duchesne_HUC8/03_out/comparison.csv";
 
       //Temple Fork 10m inputs
-//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
-//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
-//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
-//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
-//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
 
 //    //Temple Fork 10m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/01_shpIn/BRAT_TempleFk_WS.shp";
@@ -378,13 +378,13 @@ int validate()
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/03_out/comparison.csv";
 
     //Bridge Creek 1m inputs volume comparison
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/01_shpIn/BRAT_bcHUC10.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fil_vb.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fdir_vb.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fac_1mil_vb.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/01_shpIn/points_snap.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/03_out/comparison.csv";
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/01_shpIn/BRAT_bcHUC10.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fil_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fdir_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fac_1mil_vb.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/01_shpIn/points_snap.shp";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/03_out/comparison.csv";
 
     //Curtis Creek 10m inputs (whole Logan HUC 8) volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/01_shpIn/brat.shp";
@@ -419,9 +419,9 @@ int validate()
  */
 
     //Initialize surface storage model with statistical correction
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
+    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
     //Initialize surface storage model without statistical correction
-    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.1, 3);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 3);
 
  /*
  * *****************************************************************************************************
@@ -436,7 +436,7 @@ int validate()
 
     /*
     * *****************************************************************************************************
-    * ************************* RUN TYPES WHEN USING EXISTING POINTS***************************************
+    * ************************* RUN TYPES FOR POINT PLACEMENT**********************************************
     * *****************************************************************************************************
     * type = 1 (default): distribute dams evenly on each reach according to BRAT capacity
     * type = 2: add a dam complex to best habitats first, then continue to lesser habitats

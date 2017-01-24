@@ -9,6 +9,7 @@ public:
     VectorOps();
 
     static double max(QVector<double> data);
+    static double sum(QVector<double> data);
 };
 
 #endif // VECTOROPS_H

@@ -42,6 +42,7 @@ public:
     void setFacPath(const char *facPath);
     void setFieldValues(OGRFeature *pFeat, int bratID, double groundElev, double slope, double azimuth, double ptX, double ptY);
     void setOutDir(const char *outDirPath);
+    void sortByCapacity(OGRLayer *pBratLyr);
 
     static bool setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol);
 
@@ -52,6 +53,8 @@ private:
     double m_modCap, m_meanDamHeight, m_confHi, m_confLo;
     const char *m_outDir, *m_layerName, *m_demPath, *m_facPath, *m_statPath;
     QString m_qsBratDir, m_qsBratName;
+    QVector<double> m_qvCapacityRank, m_qvMaxDams;
+    QVector<int> m_qvBratFID;
 };
 
 #endif // DAMPOINTS_H

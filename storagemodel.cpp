@@ -13,6 +13,7 @@
 
 StorageModel::StorageModel(const char *bratPath, const char *outPath, const char *demPath, const char *fdirPath, const char *facPath, double capacity, int type, const char *statPath)
 {
+    srand(time(NULL));
     qDebug()<<statPath;
     m_statPath = statPath;
     init(bratPath, outPath, demPath, fdirPath, facPath, capacity);

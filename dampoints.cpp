@@ -79,7 +79,8 @@ void DamPoints::init(const char *bratPath)
     }
     else if (m_nDamPlace == 2)
     {
-
+        sortByCapacity(pBratIn);
+        createDamPoints_BRATcomplex(pBratIn, pDamsOut);
     }
 
     OGRDataSource::DestroyDataSource(pInDs);
@@ -313,8 +314,10 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
     double sampleDist = 50.0;
-    int nDams = 0;
     long lastFID = -9999;
+    double maxCap = VectorOps::sum(m_qvMaxDams);
+    double modCap = maxCap * m_modCap;
+    int nTotalDams = 0;
 
     //BRAT line segment
     OGRFeature *pBratFeat;
@@ -328,14 +331,16 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
     qDebug()<<"features"<<nFeatures;
 
     //loop through all features in BRAT layer
-    for (int i=0; i<nFeatures; i++)
+    int i=0;
+    bool stop = false;
+    while (i<nFeatures && !stop)
     {
         //qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
         int nDamCount = 0, nErrCount = 0;
         double length, damDens, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
         OGRPoint point1, point2;
         //get BRAT feature
-        pBratFeat = pBratLyr->GetFeature(i);;
+        pBratFeat = pBratLyr->GetFeature(m_qvBratFID[i]);
         OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
         //geometry of BRAT feature
         OGRLineString *pBratLine = (OGRLineString*) pGeom;
@@ -350,16 +355,25 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
         //length of BRAT segment
         length = pBratLine->get_Length();
         //BRAT existing capacity (dams/km)
-        damDens = pBratFeat->GetFieldAsDouble(densField);
+        //damDens = pBratFeat->GetFieldAsDouble(densField);
         //slope of BRAT segment
         slope = pBratFeat->GetFieldAsDouble(slopeField);
 
         //calculate number of dams from dam density, segment, length, and percent of capacity (m_modCap)
-        nDamCount = round(length * (damDens/1000.0) * m_modCap);
+        //nDamCount = round(length * (damDens/1000.0) * m_modCap);
+        nDamCount = ceil(Random::random_lognormal(1.5516125, 0.7239713));
         //qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
 
         if (nDamCount > 0)
         {
+            if (nDamCount > m_qvMaxDams[i])
+            {
+                nDamCount = m_qvMaxDams[i];
+            }
+            if ((nTotalDams + nDamCount) > modCap)
+            {
+                nDamCount = ceil(modCap - nTotalDams);
+            }
             //distance between dams
             spacing = length / (nDamCount*1.0);
         }
@@ -367,12 +381,13 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
         {
             spacing = 0.0;
         }
+        qDebug()<<nDamCount;
+        nTotalDams += nDamCount;
         //calculate azimuth (from start to end) of BRAT segment
         azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
         //end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
         //find elevation on stream network closes to dam point (on line perpendicular to BRAT segment)
         end_elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
-        nDams += nDamCount;
 
         //create a point for each dam to be modeled on BRAT segment
         for (int j=0; j<nDamCount; j++)
@@ -413,7 +428,13 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
                 }
             }
         }
+        if (nTotalDams >= modCap)
+        {
+            stop = true;
+        }
+        i++;
     }
+    qDebug()<<"Dams Modeled"<<nTotalDams<<"Max Capacity for Scenario"<<modCap;
     OGRFeature::DestroyFeature(pDamFeat);
     OGRFeature::DestroyFeature(pBratFeat);
 }
@@ -864,6 +885,88 @@ void DamPoints::setFieldValues(OGRFeature *pFeat, int bratID, double groundElev,
 void DamPoints::setOutDir(const char *outDirPath)
 {
     m_outDir = outDirPath;
+}
+
+void DamPoints::sortByCapacity(OGRLayer *pBratLyr)
+{
+    qDebug()<<"Sorting BRAT by capacity";
+    m_qvBratFID.clear();
+    m_qvCapacityRank.clear();
+    //qDebug()<<"Cleared";
+    //BRAT line segment
+    OGRFeature *pBratFeat;
+
+    int nFeatures = pBratLyr->GetFeatureCount();
+    double capacity;
+    int nFid;
+
+    //loop through all features in BRAT layer
+    for (int i=0; i<nFeatures; i++)
+    {
+        //get BRAT feature
+        pBratFeat = pBratLyr->GetFeature(i);
+        capacity = pBratFeat->GetFieldAsDouble("oCC_EX");
+        nFid = pBratFeat->GetFID();
+        OGRGeometry *pGeom = pBratFeat->GetGeometryRef();
+        //geometry of BRAT feature
+        OGRLineString *pBratLine = (OGRLineString*) pGeom;
+
+        //length of BRAT segment
+        double length = pBratLine->get_Length();
+        double maxDams = ceil(length * (capacity/1000.0));
+
+        if (i > 0)
+        {
+            if (capacity >= m_qvCapacityRank[0])
+            {
+                //qDebug()<<"prepending";
+                m_qvCapacityRank.prepend(capacity);
+                m_qvBratFID.prepend(nFid);
+                m_qvMaxDams.prepend(maxDams);
+                //qDebug()<<"prepending done";
+            }
+            else if (capacity <= m_qvCapacityRank.last())
+            {
+                //qDebug()<<"appending";
+                m_qvCapacityRank.append(capacity);
+                m_qvBratFID.append(nFid);
+                m_qvMaxDams.append(maxDams);
+                //qDebug()<<"appending done";
+            }
+            else
+            {
+                bool stop = false;
+                int j=0;
+                while (j<m_qvCapacityRank.length() && !stop)
+                {
+                    if (capacity >= m_qvCapacityRank[j])
+                    {
+                        //qDebug()<<"inserting"<<stop<<nFeatures<<i;
+                        m_qvCapacityRank.insert(j, capacity);
+                        m_qvBratFID.insert(j, nFid);
+                        m_qvMaxDams.insert(j, maxDams);
+                        //qDebug()<<"inserting done";
+                        stop = true;
+                    }
+                    j++;
+                }
+            }
+        }
+        else
+        {
+            qDebug()<<"adding first obs";
+            m_qvBratFID.append(nFid);
+            m_qvCapacityRank.append(capacity);
+            qDebug()<<"first added";
+        }
+    }
+    OGRFeature::DestroyFeature(pBratFeat);
+
+//    qDebug()<<"BRAT segment RANK TESTING";
+//    for (int i=0; i< m_qvCapacityRank.length(); i++)
+//    {
+//        qDebug()<<m_qvBratFID[i]<<m_qvCapacityRank[i];
+//    }
 }
 
 bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double midarea, double hiarea, double lowvol, double midvol, double hivol)

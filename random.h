@@ -4,6 +4,7 @@
 #include <QtCore>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 
 enum DIST_TYPE
 {

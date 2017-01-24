@@ -28,9 +28,11 @@ void Random::setStdDev(double stdev)
 
 //generate random number from normal distribution using Box-Muller Transformation
 double Random::random_normal(double mean, double stdev)
-{//Box muller method
+{
+    //Box muller method
     static double n2 = 0.0;
     static int n2_cached = 0;
+
     if (!n2_cached)
     {
         double x, y, r;
