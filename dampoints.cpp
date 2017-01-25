@@ -204,7 +204,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
     double sampleDist = 50.0;
-    int nDams = 0;
+    int nDams = 0, nPrimary = 0, nSecondary = 0;
     long lastFID = -9999;
 
     //BRAT line segment
@@ -273,9 +273,20 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             //location on BRAT segment
             double pointDist = length - (spacing * (j * 1.0));
             //random sample of 1000 heights from dam height distribtuion
-            Statistics lognormal(Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42), RDT_lnorm);
-            //get 2.5% and 97.5% quantiles
-            lognormal.calcCredibleInterval(CI_95);
+            double rnum = ((double) rand() / (RAND_MAX));
+            double dht;
+            Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
+            dht = Random::random_normal(0.92, 0.17);
+            if (rnum <= 0.15)
+            {
+                normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
+                dht = Random::random_normal(1.14, 0.19);
+                nPrimary++;
+            }
+            else
+            {
+                nSecondary++;
+            }
             //set point location on BRAT segment
             pBratLine->Value(pointDist, &damPoint);
             //location of dam point
@@ -290,7 +301,9 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             damPoint.setY(y);
             //set field values and dam heights
             setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
-            setDamHeights(pDamFeat, lognormal.getQuantile(0.025), lognormal.getQuantile(0.5), lognormal.getQuantile(0.975), VectorOps::max(lognormal.getData()));
+            double loHt, midHt, hiHt, maxHt;
+            loHt = normDist.getQuantile(0.025), midHt = normDist.getQuantile(0.5), hiHt = normDist.getQuantile(0.975), maxHt = VectorOps::max(normDist.getData());
+            setDamHeights(pDamFeat, loHt*loHt, midHt*midHt, hiHt*hiHt, maxHt*maxHt);
 
             pDamFeat->SetGeometry(&damPoint);
             //qDebug()<<"Field Values "<<i<<elev<<slope<<Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy)<<x<<y;
@@ -317,7 +330,7 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
     long lastFID = -9999;
     double maxCap = VectorOps::sum(m_qvMaxDams);
     double modCap = maxCap * m_modCap;
-    int nTotalDams = 0;
+    int nTotalDams = 0, nPrimary = 0, nSecondary = 0;
 
     //BRAT line segment
     OGRFeature *pBratFeat;
@@ -396,10 +409,21 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
             OGRPoint damPoint;
             //location on BRAT segment
             double pointDist = length - (spacing * (j * 1.0));
-            //random sample of 1000 heights from dam height distribtuion
-            Statistics lognormal(Random::randomSeries(1000, RDT_lnorm, -0.09, 0.42), RDT_lnorm);
-            //get 2.5% and 97.5% quantiles
-            lognormal.calcCredibleInterval(CI_95);
+            //Determine if dam is primary or secondary and get dam heights from distribution
+            double rnum = ((double) rand() / (RAND_MAX));
+            double dht;
+            Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
+            dht = Random::random_normal(0.92, 0.17);
+            if (rnum <= 0.15)
+            {
+                normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
+                dht = Random::random_normal(1.14, 0.19);
+                nPrimary++;
+            }
+            else
+            {
+                nSecondary++;
+            }
             //set point location on BRAT segment
             pBratLine->Value(pointDist, &damPoint);
             //location of dam point
@@ -414,7 +438,9 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
             damPoint.setY(y);
             //set field values and dam heights
             setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
-            setDamHeights(pDamFeat, lognormal.getQuantile(0.025), lognormal.getQuantile(0.5), lognormal.getQuantile(0.975), VectorOps::max(lognormal.getData()));
+            double loHt, midHt, hiHt, maxHt;
+            loHt = normDist.getQuantile(0.025), midHt = normDist.getQuantile(0.5), hiHt = normDist.getQuantile(0.975), maxHt = VectorOps::max(normDist.getData());
+            setDamHeights(pDamFeat, loHt*loHt, midHt*midHt, hiHt*hiHt, maxHt*maxHt);
 
             pDamFeat->SetGeometry(&damPoint);
             //qDebug()<<"Field Values "<<i<<elev<<slope<<Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy)<<x<<y;
@@ -435,6 +461,7 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
         i++;
     }
     qDebug()<<"Dams Modeled"<<nTotalDams<<"Max Capacity for Scenario"<<modCap;
+    qDebug()<<"primary"<<nPrimary<<"secondary"<<nSecondary;
     OGRFeature::DestroyFeature(pDamFeat);
     OGRFeature::DestroyFeature(pBratFeat);
 }
@@ -468,19 +495,17 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
         double az = Geometry::calcAzimuth(pBratLine->getX(pBratLine->getNumPoints()-1), pBratLine->getY(pBratLine->getNumPoints()-1), pBratLine->getX(0), pBratLine->getY(0));
         double rnum = ((double) rand() / (RAND_MAX));
         double dht;
-        Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.93, 0.17), RDT_norm);
+        Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
         dht = Random::random_normal(0.92, 0.17);
         if (rnum <= 0.15)
         {
-            normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.16, 0.20));
-            dht = Random::random_normal(1.16, 0.2);
+            normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
+            dht = Random::random_normal(1.14, 0.19);
             nPrimary++;
-            //qDebug()<<"primary"<<rnum;
         }
         else
         {
             nSecondary++;
-            //qDebug()<<"secondary"<<rnum;
         }
 
         double x = pOldDam->getX();
