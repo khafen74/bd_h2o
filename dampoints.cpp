@@ -394,7 +394,7 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
         {
             spacing = 0.0;
         }
-        qDebug()<<nDamCount;
+        //qDebug()<<nDamCount;
         nTotalDams += nDamCount;
         //calculate azimuth (from start to end) of BRAT segment
         azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
@@ -460,7 +460,7 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
         }
         i++;
     }
-    qDebug()<<"Dams Modeled"<<nTotalDams<<"Max Capacity for Scenario"<<modCap;
+    qDebug()<<"Dams Modeled"<<nTotalDams<<"Max Capacity for Scenario"<<modCap<<"Maximum Capacity"<<maxCap<<"Percent Capacity"<<m_modCap;
     qDebug()<<"primary"<<nPrimary<<"secondary"<<nSecondary;
     OGRFeature::DestroyFeature(pDamFeat);
     OGRFeature::DestroyFeature(pBratFeat);

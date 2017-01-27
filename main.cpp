@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
     QDateTime startTime = QDateTime::currentDateTime();
 
     //test();
-    validate();
-    //logan();
+    //validate();
+    logan();
     //testStats();
     //runXYZ();
     //soil();
@@ -234,13 +234,13 @@ int validate()
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Duchesne_HUC8/03_out/comparison.csv";
 
       //Temple Fork 10m inputs
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
 
 //    //Temple Fork 10m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/01_shpIn/BRAT_TempleFk_WS.shp";
@@ -395,8 +395,17 @@ int validate()
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/01_shpIn/points_snap.shp";
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/03_out/comparison.csv";
 
+
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/brat.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fil.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fdir.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fac_5.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/DamArea_BRAT_joined.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out/comparison.csv";
+
 //    Raster raster;
-//    raster.setNoData(demPath, -9999.0, 100, 4000);
+//    raster.setNoData(demPath, -9999.0, 50, 5000);
 //    raster.setNoData(fdirPath, 0, 1, 200);
 //    raster.setNoData(facPath, -1, 1, 2);
 
@@ -454,7 +463,7 @@ int validate()
 
 int logan()
 {
-    QString dirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan_HUC8/05_HUC12";
+    QString dirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203";
     QDir dir(dirPath);
     QFileInfoList fiList = dir.entryInfoList();
     qDebug()<<"starting loop";
@@ -463,16 +472,25 @@ int logan()
     {
         qDebug()<<fiList[i].baseName();
         std::string basePath = dirPath.toStdString() + "/" + fiList[i].baseName().toStdString();
+        QString qBasePath = dirPath + fiList[i].baseName();
+        if (!QDir(qBasePath + "/03_out").exists())
+        {
+            QDir().mkdir(qBasePath + "/03_out");
+        }
         std::string bratPath = basePath + "/01_shpIn/brat.shp";
         std::string outDir = basePath + "/03_out";
         std::string demPath = basePath + "/02_rasIn/fil.tif";
-        std::string facPath = basePath + "/02_rasIn/fac.tif";
+        std::string facPath = basePath + "/02_rasIn/fac_5.tif";
         std::string fdirPath = basePath + "/02_rasIn/fdir.tif";
         //qDebug()<<"names set"<<bratPath.toStdString().c_str()<<outDir.toStdString().c_str()<<demPath.toStdString().c_str()<<facPath.toStdString().c_str()<<fdirPath.toStdString().c_str();
 
+        Raster raster;
+        raster.setNoData(demPath.c_str(), -9999.0, 50, 5000);
+        raster.setNoData(fdirPath.c_str(), 0, 1, 200);
+        raster.setNoData(facPath.c_str(), -1, 1, 2);
         //qDebug()<<"running"<<i+1<<"of"<<fiList.length()<<basePath;
-        StorageModel model(bratPath.c_str(), outDir.c_str(), demPath.c_str(), fdirPath.c_str(), facPath.c_str(), 0.82, 2);
-        model.run(1);
+        StorageModel model(bratPath.c_str(), outDir.c_str(), demPath.c_str(), fdirPath.c_str(), facPath.c_str(), 0.5, 3);
+        model.run(2);
         //qDebug()<<basePath<<"done";
     }
 }

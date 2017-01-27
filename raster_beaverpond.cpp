@@ -11,50 +11,52 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
     //Represents maximum dam height
     double maxHeight = 4.0;
 
-    for (int i=0; i<9; i++)
+    if (startX > 0 && startY > 0)
     {
-        unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
-        float *demWin = (float*) CPLMalloc(sizeof(float)*9);
-        float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
-        float *htOld = (float*) CPLMalloc(sizeof(float)*1);
-        flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
-        dem->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, demWin, 3, 3, GDT_Float32, 0, 0);
-
-        int newX = startX;
-        int newY = startY;
-        *htAbove = demWin[i] - startE;
-
-        //Index cell must drain to target cell
-        if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight && *htAbove > -10.0)
+        for (int i=0; i<9; i++)
         {
-            newX += COL_OFFSET[i];
-            newY += ROW_OFFSET[i];
-            out->GetRasterBand(1)->RasterIO(GF_Read, newX, newY, 1, 1, htOld, 1, 1, GDT_Float32, 0, 0);
+            unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
+            float *demWin = (float*) CPLMalloc(sizeof(float)*9);
+            float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
+            float *htOld = (float*) CPLMalloc(sizeof(float)*1);
+            flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+            dem->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, demWin, 3, 3, GDT_Float32, 0, 0);
 
-            //Only write new value if it is less than previous value (deepest pond always wins)
-            if (*htOld >= *htAbove || *htOld < -10.0)
+            int newX = startX;
+            int newY = startY;
+            *htAbove = demWin[i] - startE;
+
+            //Index cell must drain to target cell
+            if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight && *htAbove > -10.0)
             {
-                idOut->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, pondID, 1, 1, GDT_Float32, 0, 0);
-                out->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, htAbove, 1, 1, GDT_Float32, 0, 0);
-            }
-            //Free memory before recursive call (should prevent allocating too much memory)
-            CPLFree(htOld);
-            CPLFree(demWin);
-            CPLFree(fdirWin);
-            CPLFree(htAbove);
+                newX += COL_OFFSET[i];
+                newY += ROW_OFFSET[i];
+                out->GetRasterBand(1)->RasterIO(GF_Read, newX, newY, 1, 1, htOld, 1, 1, GDT_Float32, 0, 0);
 
-            //Run algorithm again
-            backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID);
-        }
-        else
-        {
-            CPLFree(htOld);
-            CPLFree(demWin);
-            CPLFree(fdirWin);
-            CPLFree(htAbove);
+                //Only write new value if it is less than previous value (deepest pond always wins)
+                if (*htOld >= *htAbove || *htOld < -10.0)
+                {
+                    idOut->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, pondID, 1, 1, GDT_Float32, 0, 0);
+                    out->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, htAbove, 1, 1, GDT_Float32, 0, 0);
+                }
+                //Free memory before recursive call (should prevent allocating too much memory)
+                CPLFree(htOld);
+                CPLFree(demWin);
+                CPLFree(fdirWin);
+                CPLFree(htAbove);
+
+                //Run algorithm again
+                backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID);
+            }
+            else
+            {
+                CPLFree(htOld);
+                CPLFree(demWin);
+                CPLFree(fdirWin);
+                CPLFree(htAbove);
+            }
         }
     }
-
 }
 
 void Raster_BeaverPond::groundwaterDepth(const char *startDepth, const char *newDepth, const char *outPath)
@@ -649,6 +651,7 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
                 }
             }
         }
+        //qDebug()<<"row"<<i<<"done of"<<nRows;
     }
 
     CPLFree(idVal);
