@@ -246,7 +246,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
         slope = pBratFeat->GetFieldAsDouble(slopeField);
 
         //calculate number of dams from dam density, segment, length, and percent of capacity (m_modCap)
-        nDamCount = round(length * (damDens/1000.0) * m_modCap);
+        nDamCount = ceil(length * (damDens/1000.0) * m_modCap);
         //qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
 
         if (nDamCount > 0)
@@ -318,6 +318,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
             }
         }
     }
+    qDebug()<<nDams<<"modeled";
     OGRFeature::DestroyFeature(pDamFeat);
     OGRFeature::DestroyFeature(pBratFeat);
 }

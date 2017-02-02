@@ -11,6 +11,7 @@ int pataha();
 int testStats();
 int runXYZ();
 int soil();
+int soilFixer();
 
 int main(int argc, char *argv[])
 {
@@ -20,10 +21,11 @@ int main(int argc, char *argv[])
 
     //test();
     //validate();
-    logan();
+    //logan();
     //testStats();
     //runXYZ();
     //soil();
+    soilFixer();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -234,13 +236,13 @@ int validate()
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Duchesne_HUC8/03_out/comparison.csv";
 
       //Temple Fork 10m inputs
-//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
-//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
-//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
-//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
-//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
 
 //    //Temple Fork 10m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/01_shpIn/BRAT_TempleFk_WS.shp";
@@ -395,14 +397,14 @@ int validate()
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/01_shpIn/points_snap.shp";
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/03_out/comparison.csv";
 
-
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/brat.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fil.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fdir.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fac_5.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/DamArea_BRAT_joined.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out/comparison.csv";
+    //Crash when running this setup in batch mode, figuring out problems
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/brat.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fil.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fdir.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fac_5.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/DamArea_BRAT_joined.shp";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out/comparison.csv";
 
 //    Raster raster;
 //    raster.setNoData(demPath, -9999.0, 50, 5000);
@@ -430,7 +432,7 @@ int validate()
     //Initialize surface storage model with statistical correction
     //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
     //Initialize surface storage model without statistical correction
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 3);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3);
 
  /*
  * *****************************************************************************************************
@@ -573,5 +575,19 @@ int soil()
     qDebug()<<"start";
     Raster raster;
     raster.adjustSoil(mukeyID, porID, porIDout);
+    qDebug()<<"done";
+}
+
+int soilFixer()
+{
+    const char *dem = "F:/01_etal/GIS_Data/USA/DEM/NED_10m/Utah/BearRiver/HUC8/16010101/dem_vb.tif";
+    const char *huc8 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC8.tif";
+    const char *huc12 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC12.tif";
+    const char *soil = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/EntireDrianage/por_clip.tif";
+    const char *out = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/por_vb.tif";
+
+    Raster_BeaverPond fixer;
+    qDebug()<<"starting soil raster function";
+    fixer.soilRasterCreation(dem, huc8, huc12, soil, out);
     qDebug()<<"done";
 }

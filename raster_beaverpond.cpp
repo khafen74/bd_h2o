@@ -666,6 +666,126 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     qDebug()<<"all datasets closed";
 }
 
+void Raster_BeaverPond::soilRasterCreation(const char *demPath, const char *huc8Path, const char *huc12Path, const char *inSoil, const char *outSoil)
+{
+    setProperties(demPath);
+    GDALDataset *pDemDs, *pOutDs;
+    pDemDs = (GDALDataset*) GDALOpen(demPath, GA_ReadOnly);
+    pOutDs = pDriverTiff->Create(outSoil, nCols, nRows, 1, GDT_Float32, NULL);
+    pOutDs->SetGeoTransform(transform);
+    pOutDs->GetRasterBand(1)->SetNoDataValue(noData);
+    pOutDs->GetRasterBand(1)->Fill(noData);
+
+    float *demRow = (float*) CPLMalloc(sizeof(float)*nCols);
+    float *outRow = (float*) CPLMalloc(sizeof(float)*nCols);
+
+    double x, y, val8, val12, soilVal;
+    int index8, index12;
+    QVector<double> id8, sum8, id12, sum12;
+    QVector<int> count8, count12;
+
+    for (int i=0; i<nRows; i++)
+    {
+        pDemDs->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, demRow, nCols, 1, GDT_Float32, 0, 0);
+        //pInDs->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, soilRow, nCols, 1, GDT_Float32, 0, 0);
+        y = yCoordinate(i);
+
+        for (int j=0; j<nCols; j++)
+        {
+            x = xCoordinate(j);
+
+            if (demRow[j] > 0.0)
+            {
+                soilVal = rasterValueAtPoint(inSoil, x, y);
+
+                if (soilVal > 0.0)
+                {
+                    outRow[j] = soilVal;
+                    val8 = rasterValueAtPoint(huc8Path, x, y);
+                    val12 = rasterValueAtPoint(huc12Path, x, y);
+                    index8 = id8.indexOf(val8);
+                    index12 = id12.indexOf(val12);
+
+                    if (index8 > -1)
+                    {
+                        sum8[index8] += soilVal;
+                        count8[index8] += 1;
+                    }
+                    else
+                    {
+                        id8.append(val12);
+                        sum8.append(soilVal);
+                        count8.append(1);
+                    }
+
+                    if (index12 > -1)
+                    {
+                        sum12[index12] += soilVal;
+                        count12[index12] += 1;
+                    }
+                    else
+                    {
+                        id12.append(val12);
+                        sum12.append(soilVal);
+                        count12.append(1);
+                    }
+                }
+                else
+                {
+                    outRow[j] = noData;
+                }
+            }
+            else
+            {
+                outRow[j] = noData;
+            }
+        }
+
+        pOutDs->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, outRow, nCols, 1, GDT_Float32, 0, 0);
+        qDebug()<<"row"<<i+1<<"of"<<nRows;
+    }
+
+    for (int i=0; i<nRows; i++)
+    {
+        pDemDs->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, demRow, nCols, 1, GDT_Float32, 0, 0);
+        pOutDs->GetRasterBand(1)->RasterIO(GF_Read, 0, i, nCols, 1, outRow, nCols, 1, GDT_Float32, 0, 0);
+        y = yCoordinate(i);
+
+        for (int j=0; j<nCols; j++)
+        {
+            x = xCoordinate(j);
+
+            if (demRow[j] > 0.0 && outRow[j] <= 0.0)
+            {
+                val12 = rasterValueAtPoint(huc12Path, x, y);
+                index12 = id12.indexOf(val12);
+
+                if(index12 > -1)
+                {
+                    outRow[j] = sum12[index12] / (count12[index12] * 1.0);
+                }
+                else
+                {
+                    val8 = rasterValueAtPoint(huc8Path, x, y);
+                    index8 = id8.indexOf(val8);
+
+                    if(index8 > -1)
+                    {
+                        outRow[j] = sum8[index8] / (count8[index8] * 1.0);
+                    }
+                }
+
+            }
+        }
+    }
+
+    CPLFree(demRow);
+    CPLFree(outRow);
+
+    GDALClose(pDemDs);
+    GDALClose(pOutDs);
+}
+
 void Raster_BeaverPond::subtractHAND(const char *endPath, const char *outPath)
 {
     GDALDataset *pSourceDS, *pEndDs, *pOutDS;
