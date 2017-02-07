@@ -1630,9 +1630,16 @@ double Raster::valueAtPoint(double xCoord, double yCoord)
 
     float *rasVal = (float*) CPLMalloc(sizeof(float)*1);
 
-    pRaster->GetRasterBand(1)->RasterIO(GF_Read, col, row, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
+    if (row > nRows || col > nCols || row < 0 || col < 0)
+    {
+        value = -9999.0;
+    }
+    else
+    {
+        pRaster->GetRasterBand(1)->RasterIO(GF_Read, col, row, 1, 1, rasVal, 1, 1, GDT_Float32, 0, 0);
 
-    value = *rasVal;
+        value = *rasVal;
+    }
 
     CPLFree(rasVal);
 

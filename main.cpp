@@ -583,11 +583,15 @@ int soilFixer()
     const char *dem = "F:/01_etal/GIS_Data/USA/DEM/NED_10m/Utah/BearRiver/HUC8/16010101/dem_vb.tif";
     const char *huc8 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC8.tif";
     const char *huc12 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC12.tif";
-    const char *soil = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/EntireDrianage/por_clip.tif";
-    const char *out = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/por_vb.tif";
+    const char *soil = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/EntireDrianage/kv_clip.tif";
+    const char *out = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/kv_vb.tif";
 
+    double kvmax = 229.0;
+    double ksatmax = 345.0;
+    double pormax = 100.0;
     Raster_BeaverPond fixer;
     qDebug()<<"starting soil raster function";
-    fixer.soilRasterCreation(dem, huc8, huc12, soil, out);
+    fixer.soilRasterCreation(dem, huc8, huc12, soil, out, kvmax);
+    //fixer.soilRasterCreation_table(dem, huc8, huc12, out, 100.0);
     qDebug()<<"done";
 }

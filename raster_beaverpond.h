@@ -23,7 +23,8 @@ public:
                                   , const char *outPath, const char *outPondID
                                   , const char *outHeightLo, const char *outHeightMid, const char *outHeightHi);
     void pondDepth_backwardHAND(const char *demPath, const char *fdirPath, const char *idPath, const char *outHtPath, const char *outIdPath);
-    void soilRasterCreation(const char *demPath, const char *huc8Path, const char *huc12Path, const char *inSoil, const char *outSoil);
+    void soilRasterCreation(const char *demPath, const char *huc8Path, const char *huc12Path, const char *inSoil, const char *outSoil, double maxVal);
+    void soilRasterCreation_table(const char *demPath, const char *huc8Path, const char *huc12Path, const char *soilPath, double maxVal);
     void subtractHAND(const char *endPath, const char *outPath);
     void subtractHAND(const char *startPath, const char *endPath, const char *outPath);
     //void waterSurfaceElevation(const char *sourcePath, const char *waterDepth, const char *outPath);
