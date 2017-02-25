@@ -6,7 +6,7 @@ Raster_BeaverPond::Raster_BeaverPond()
 }
 
 //Work the HAND algorithm backward to determine pond depth
-void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDALDataset *idOut, GDALDataset *out, int startX, int startY, double startE, float *pondID)
+void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDALDataset *idOut, GDALDataset *out, int startX, int startY, double startE, float *pondID, int maxCount, int &count)
 {
     //Represents maximum dam height
     double maxHeight = 4.0;
@@ -45,8 +45,11 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
                 CPLFree(fdirWin);
                 CPLFree(htAbove);
 
-                //Run algorithm again
-                backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID);
+                //If pond is less than max size run algorithm again
+                if (count < maxCount)
+                {
+                    backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID, maxCount, count);
+                }
             }
             else
             {
@@ -608,6 +611,8 @@ void Raster_BeaverPond::heightAboveNetwork_ponds(const char *demPath, const char
 //Determine pond depth with the HAND algorithm, but works backward from dam cells and uses recursive function 'backwardHAND'
 void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *fdirPath, const char *idPath, const char *outHtPath, const char *outIdPath)
 {
+    //the maximum allowable pond area in m^2
+    double maxPondArea = 20000.0;
     setProperties(demPath);
 
     GDALDataset *pDem, *pFdir, *pId, *pHeight, *pIdOut;
@@ -630,6 +635,9 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     float* demVal = (float*) CPLMalloc(sizeof(float)*1);
     unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
 
+    int maxCount = ceil(maxPondArea/abs(transform[1]*transform[5]));
+    int count = 0;
+
     for (int i=1; i<nRows-1; i++)
     {
         for (int j=1; j<nCols-1; j++)
@@ -647,7 +655,7 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
                     double startE = *demVal;
 
                     //Meat of the algorithm, a recursive function
-                    backwardHAND(pFdir, pDem, pIdOut, pHeight, j, i, startE, idVal);
+                    backwardHAND(pFdir, pDem, pIdOut, pHeight, j, i, startE, idVal, maxCount, count);
                 }
             }
         }

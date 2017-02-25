@@ -3,6 +3,7 @@
 #include <QDebug>
 #include "storagemodel.h"
 
+int bearRiverAnalysis();
 int test();
 int run();
 int validate();
@@ -12,6 +13,7 @@ int testStats();
 int runXYZ();
 int soil();
 int soilFixer();
+int bridgeCreekGW();
 
 int main(int argc, char *argv[])
 {
@@ -25,13 +27,86 @@ int main(int argc, char *argv[])
     //testStats();
     //runXYZ();
     //soil();
-    soilFixer();
+    //soilFixer();
+    //bridgeCreekGW();
+    bearRiverAnalysis();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
     qDebug()<<"done"<<startTime.secsTo(endTime)<<startTime.secsTo(endTime)/60.0;
 
     return a.exec();
+}
+
+int bearRiverAnalysis()
+{
+    //Curtis Creek 10m for groundwater validation
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/01_shpIn/brat_cap_20170224.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/dem_vb.tif";
+    const char *filPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fil_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fdir_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fac_1km_vb.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/01_shpIn/points_snap.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/03_out/comparison.csv";
+
+    // Set no data value for all values outside of data range on all rasters
+    Raster raster;
+    raster.setNoData(demPath, -9999.0, 50, 5000);
+    raster.setNoData(filPath, -9999.0, 50, 5000);
+    raster.setNoData(fdirPath, 0, 1, 200);
+    raster.setNoData(facPath, -1, 1, 2);
+
+    const char *txtPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.txt";
+    const char *statPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.tif";
+
+//    Raster raster;
+//    qDebug()<<"raster initialized";
+//    raster.fromXYZ(statPath, txtPath, 79, 79, -9999.0);
+//    qDebug()<<"raster done";
+
+/*
+ * ******************************************************************************************
+ * ************************* RUN TYPES WHEN USING BRAT (Initialization types)****************
+ * ******************************************************************************************
+ * type = 1: vector based (pond determined with maximum extent polygon)
+ * type = 2: raster based (pond determined with flow direction algebra)
+ * type = 3: raster based, backwards and recursive flow direction algorithm (faster)
+ * ******************************************************************************************
+ */
+
+    //Initialize surface storage model with statistical correction
+    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
+    //Initialize surface storage model without statistical correction
+    StorageModel model(bratPath, outDir, filPath, fdirPath, facPath, 0.5, 3);
+
+ /*
+ * *****************************************************************************************************
+ * ************************* RUN TYPES WHEN USING EXISTING POINTS***************************************
+ * *****************************************************************************************************
+ * type = 1 (default): use existing dam locations (copy created)
+ * type = 2: existing dam locations, maintain locations (do not move to flow accumulation)
+ * type = 3: use existing dam points with heights
+ * type = 4: use existing dam points with heights, maintain locations (do not move to flow accumulation)
+ * *****************************************************************************************************
+ */
+
+    /*
+    * *****************************************************************************************************
+    * ************************* RUN TYPES FOR POINT PLACEMENT**********************************************
+    * *****************************************************************************************************
+    * type = 1 (default): distribute dams evenly on each reach according to BRAT capacity
+    * type = 2: add a dam complex to best habitats first, then continue to lesser habitats
+    * *****************************************************************************************************
+    */
+
+    // Run surface storage model
+    //model.runFromPoints(damsPath, csvPath);
+    //model.runFromPoints(damsPath, csvPath, 1);
+    //model.runFromPointsWithHeights(damsPath,csvPath, 3);
+    model.run(2);
+
+    return 0;
 }
 
 int test()
@@ -236,13 +311,13 @@ int validate()
 //    const char *csvPath = "E:/etal/Projects/NonLoc/BeaverModeling/06_ValidationSurfaceStorage/Duchesne_HUC8/03_out/comparison.csv";
 
       //Temple Fork 10m inputs
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/BRAT_TempleFk_WS.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fil10m_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fdir10m_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/02_rasIn/fac_2500_vb.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/01_shpIn/DamArea_BRAT_joined.shp";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m/03_out/comparison.csv";
 
 //    //Temple Fork 10m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/01_shpIn/BRAT_TempleFk_WS.shp";
@@ -397,8 +472,17 @@ int validate()
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/01_shpIn/points_snap.shp";
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/03_out/comparison.csv";
 
+    //Curtis Creek 10m for groundwater validation
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030203/01_shpIn/brat.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030203/02_rasIn/fil_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030203/02_rasIn/fdir.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030203/02_rasIn/fac_5.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030203/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030203/01_shpIn/points_snap.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030203/03_out/comparison.csv";
+
     //Crash when running this setup in batch mode, figuring out problems
-//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/brat.shp";
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/1601020302/01_shpIn/brat.shp";
 //    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fil.tif";
 //    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fdir.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/02_rasIn/fac_5.tif";
@@ -406,10 +490,10 @@ int validate()
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/01_shpIn/DamArea_BRAT_joined.shp";
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out/comparison.csv";
 
-//    Raster raster;
-//    raster.setNoData(demPath, -9999.0, 50, 5000);
-//    raster.setNoData(fdirPath, 0, 1, 200);
-//    raster.setNoData(facPath, -1, 1, 2);
+    Raster raster;
+    raster.setNoData(demPath, -9999.0, 50, 5000);
+    raster.setNoData(fdirPath, 0, 1, 200);
+    raster.setNoData(facPath, -1, 1, 2);
 
     const char *txtPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.txt";
     const char *statPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.tif";
@@ -457,8 +541,8 @@ int validate()
     // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
     //model.runFromPoints(damsPath, csvPath, 1);
-    //model.runFromPointsWithHeights(damsPath,csvPath, 3);
-    model.run(2);
+    model.runFromPointsWithHeights(damsPath,csvPath, 3);
+    //model.run(2);
 
     return 0;
 }
@@ -580,18 +664,100 @@ int soil()
 
 int soilFixer()
 {
+    //Bear River
     const char *dem = "F:/01_etal/GIS_Data/USA/DEM/NED_10m/Utah/BearRiver/HUC8/16010101/dem_vb.tif";
     const char *huc8 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC8.tif";
     const char *huc12 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC12.tif";
-    const char *soil = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/EntireDrianage/kv_clip.tif";
-    const char *out = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/kv_vb.tif";
+    const char *soil = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/EntireDrianage/fc_frompoly.tif";
+    const char *out = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/fc_vb.tif";
 
     double kvmax = 229.0;
     double ksatmax = 345.0;
     double pormax = 100.0;
+
+    //Bridge Creek
+//    const char *dem = "F:/01_etal/GIS_Data/USA/DEM/NED_10m/Oregon/JohnDay/LJD_10m_vb.tif";
+//    dem = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/02_rasIn/dem_vb.tif";
+//    const char *huc8 = "F:/01_etal/GIS_Data/USA/NHD/USA/Oregon/JohnDay/LJD_HUC8_utm10.tif";
+//    const char *huc12 = "F:/01_etal/GIS_Data/USA/NHD/USA/Oregon/JohnDay/LJD_HUC12_utm10.tif";
+//    const char *soil = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Oregon/JohnDay/LJD_ksat_vb.tif";
+//    const char *out = "F:/01_etal/GIS_Data/USA/Soil/gSSURGO/Oregon/JohnDay/BridgeCreek/ksat_10m_vb.tif";
+
+//    double kvmax = 422.0;
+//    double ksatmax = 423.0;
+//    double pormax = 100.0;
+
     Raster_BeaverPond fixer;
     qDebug()<<"starting soil raster function";
-    fixer.soilRasterCreation(dem, huc8, huc12, soil, out, kvmax);
+    fixer.soilRasterCreation(dem, huc8, huc12, soil, out, pormax);
     //fixer.soilRasterCreation_table(dem, huc8, huc12, out, 100.0);
     qDebug()<<"done";
+}
+
+int bridgeCreekGW()
+{
+    //Bridge Creek 10m for groundwater validation
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BridgeCreek/10m/2015/HUC12/170702040303/01_shpIn/BRAT_bcHUC10.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BridgeCreek/10m/2015/HUC12/170702040303/02_rasIn/fil_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BridgeCreek/10m/2015/HUC12/170702040303/02_rasIn/fdir_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BridgeCreek/10m/2015/HUC12/170702040303/02_rasIn/fac_50000_vb.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BridgeCreek/10m/2015/HUC12/170702040303/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BridgeCreek/10m/2015/HUC12/170702040303/01_shpIn/points_snap_intact.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BridgeCreek/10m/2015/HUC12/170702040303/03_out/comparison.csv";
+
+    Raster raster;
+    raster.setNoData(demPath, -9999.0, 50, 5000);
+    raster.setNoData(fdirPath, 0, 1, 200);
+    raster.setNoData(facPath, -1, 1, 2);
+
+    const char *txtPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.txt";
+    const char *statPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.tif";
+
+//    Raster raster;
+//    qDebug()<<"raster initialized";
+//    raster.fromXYZ(statPath, txtPath, 79, 79, -9999.0);
+//    qDebug()<<"raster done";
+
+/*
+ * ******************************************************************************************
+ * ************************* RUN TYPES WHEN USING BRAT (Initialization types)****************
+ * ******************************************************************************************
+ * type = 1: vector based (pond determined with maximum extent polygon)
+ * type = 2: raster based (pond determined with flow direction algebra)
+ * type = 3: raster based, backwards and recursive flow direction algorithm (faster)
+ * ******************************************************************************************
+ */
+
+    //Initialize surface storage model with statistical correction
+    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
+    //Initialize surface storage model without statistical correction
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3);
+
+ /*
+ * *****************************************************************************************************
+ * ************************* RUN TYPES WHEN USING EXISTING POINTS***************************************
+ * *****************************************************************************************************
+ * type = 1 (default): use existing dam locations (copy created)
+ * type = 2: existing dam locations, maintain locations (do not move to flow accumulation)
+ * type = 3: use existing dam points with heights
+ * type = 4: use existing dam points with heights, maintain locations (do not move to flow accumulation)
+ * *****************************************************************************************************
+ */
+
+    /*
+    * *****************************************************************************************************
+    * ************************* RUN TYPES FOR POINT PLACEMENT**********************************************
+    * *****************************************************************************************************
+    * type = 1 (default): distribute dams evenly on each reach according to BRAT capacity
+    * type = 2: add a dam complex to best habitats first, then continue to lesser habitats
+    * *****************************************************************************************************
+    */
+
+    // Run surface storage model
+    //model.runFromPoints(damsPath, csvPath);
+    model.runFromPoints(damsPath, csvPath, 1);
+    //model.runFromPointsWithHeights(damsPath,csvPath, 3);
+    //model.run(2);
+
+    return 0;
 }

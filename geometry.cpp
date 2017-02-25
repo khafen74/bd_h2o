@@ -71,6 +71,7 @@ double Geometry::calcAzimuth(double startX, double startY, double endX, double e
     else
     {
         qDebug()<<"AZIMUTH ERROR: may be a straight line";
+        qDebug()<<"start x"<<startX<<"start y"<<startY<<"end x"<<endX<<"end y"<<endY;
     }
 
     return azimuth;
