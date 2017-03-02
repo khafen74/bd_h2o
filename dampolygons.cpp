@@ -777,7 +777,7 @@ void DamPolygons::summarizePondDepths_raster(OGRLayer *pPts)
     GDALClose(pHi);
     GDALClose(pPond);
 
-    if (m_nSummaryIter > 80)
+    if (m_nSummaryIter > 40)
     {
         adjusted = true;
     }

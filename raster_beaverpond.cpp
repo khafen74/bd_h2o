@@ -15,11 +15,14 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
     {
         for (int i=0; i<9; i++)
         {
+            //qDebug()<<"assigning vars";
             unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
             float *demWin = (float*) CPLMalloc(sizeof(float)*9);
             float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
             float *htOld = (float*) CPLMalloc(sizeof(float)*1);
+            //qDebug()<<"read fdir";
             flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
+            //qDebug()<<"read dem";
             dem->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, demWin, 3, 3, GDT_Float32, 0, 0);
 
             int newX = startX;
@@ -27,8 +30,10 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
             *htAbove = demWin[i] - startE;
 
             //Index cell must drain to target cell
-            if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight && *htAbove > -10.0)
+            if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight && *htAbove > -10.0 && count < maxCount)
             {
+
+                //qDebug()<<"pond cell counts"<<count<<"of"<<maxCount;
                 newX += COL_OFFSET[i];
                 newY += ROW_OFFSET[i];
                 out->GetRasterBand(1)->RasterIO(GF_Read, newX, newY, 1, 1, htOld, 1, 1, GDT_Float32, 0, 0);
@@ -36,8 +41,11 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
                 //Only write new value if it is less than previous value (deepest pond always wins)
                 if (*htOld >= *htAbove || *htOld < -10.0)
                 {
+                    //qDebug()<<"write pond id";
                     idOut->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, pondID, 1, 1, GDT_Float32, 0, 0);
+                    //qDebug()<<"write ht above";
                     out->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, htAbove, 1, 1, GDT_Float32, 0, 0);
+                    count++;
                 }
                 //Free memory before recursive call (should prevent allocating too much memory)
                 CPLFree(htOld);
@@ -46,10 +54,10 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
                 CPLFree(htAbove);
 
                 //If pond is less than max size run algorithm again
-                if (count < maxCount)
-                {
-                    backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID, maxCount, count);
-                }
+
+                //qDebug()<<"bwh-2start";
+                backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID, maxCount, count);
+                //qDebug()<<"bwh-2 done";
             }
             else
             {
@@ -636,7 +644,7 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
 
     int maxCount = ceil(maxPondArea/abs(transform[1]*transform[5]));
-    int count = 0;
+    qDebug()<<"max cell count per pond"<<maxCount;
 
     for (int i=1; i<nRows-1; i++)
     {
@@ -646,17 +654,21 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
 
             if (*idVal >= 0.0)
             {
+                //qDebug()<<"row"<<i+1<<*idVal;
                 pDem->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
                 pFdir->GetRasterBand(1)->RasterIO(GF_Read, j-1, i-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
 
-                //qDebug()<<*idVal<<*demVal;
                 for (int l=0; l<9; l++)
                 {
+                    int count=0;
+                    int maxCount6 = ceil(maxCount/6.0);
                     double startE = *demVal;
 
                     //Meat of the algorithm, a recursive function
-                    backwardHAND(pFdir, pDem, pIdOut, pHeight, j, i, startE, idVal, maxCount, count);
+                    //qDebug()<<"starting bwh";
+                    backwardHAND(pFdir, pDem, pIdOut, pHeight, j, i, startE, idVal, maxCount6, count);
                 }
+                //qDebug()<<"bwh done";
             }
         }
         //qDebug()<<"row"<<i<<"done of"<<nRows;

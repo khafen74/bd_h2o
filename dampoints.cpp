@@ -351,7 +351,7 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
     {
         //qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
         int nDamCount = 0, nErrCount = 0;
-        double length, damDens, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
+        double length, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
         OGRPoint point1, point2;
         //get BRAT feature
         pBratFeat = pBratLyr->GetFeature(m_qvBratFID[i]);
@@ -368,13 +368,11 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
 
         //length of BRAT segment
         length = pBratLine->get_Length();
-        //BRAT existing capacity (dams/km)
-        //damDens = pBratFeat->GetFieldAsDouble(densField);
+
         //slope of BRAT segment
         slope = pBratFeat->GetFieldAsDouble(slopeField);
 
-        //calculate number of dams from dam density, segment, length, and percent of capacity (m_modCap)
-        //nDamCount = round(length * (damDens/1000.0) * m_modCap);
+        //number of dams for a BRAT segment randomly selected from complex size distribution
         nDamCount = ceil(Random::random_lognormal(1.5516125, 0.7239713));
         //qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
 
@@ -395,12 +393,10 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
         {
             spacing = 0.0;
         }
-        //qDebug()<<nDamCount;
         nTotalDams += nDamCount;
         //calculate azimuth (from start to end) of BRAT segment
         azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
-        //end_elev = raster_dem.sampleAlongLine_LowVal(m_demPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
-        //find elevation on stream network closes to dam point (on line perpendicular to BRAT segment)
+        //find elevation on stream network closest to dam point (on line perpendicular to BRAT segment)
         end_elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
 
         //create a point for each dam to be modeled on BRAT segment
@@ -413,10 +409,13 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
             //Determine if dam is primary or secondary and get dam heights from distribution
             double rnum = ((double) rand() / (RAND_MAX));
             double dht;
+            //Heigth distribution for secondary dams
             Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
             dht = Random::random_normal(0.92, 0.17);
+            //Primary dam
             if (rnum <= 0.15)
             {
+                //Height distribution for primary dams
                 normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
                 dht = Random::random_normal(1.14, 0.19);
                 nPrimary++;
@@ -1004,6 +1003,8 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
     qvVol.append(lowvol), qvVol.append(midvol), qvVol.append(hivol);
     qsLevels.append("lo"), qsLevels.append("mid"), qsLevels.append("hi");
     double ht, htMod, pred, lwr, upr, vol, diff;
+    // amount by which to increment dam height
+    double htInc = 0.1;
 
     for (int i=0; i<qsLevels.length(); i++)
     {
@@ -1031,10 +1032,10 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
             }
             else if (qvVol[i] > upr)
             {
-                if (htMod > 0.05)
+                if (htMod > htInc)
                 {
                     pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -1.0);
-                    pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
+                    pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - htInc);
                     pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
                     adjusted = false;
                 }
@@ -1051,7 +1052,7 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
                 if (htMod < 4.0)
                 {
                     pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -2.0);
-                    pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + 0.05);
+                    pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + htInc);
                     pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
                     adjusted = false;
                 }
@@ -1078,11 +1079,11 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
             {
                 if ((qvVol[i] - pred) > 0.0)
                 {
-                    if (htMod > 0.05)
+                    if (htMod > htInc)
                     {
                         //qDebug()<<"NEGATIVE ONE: HEIGHT CHANGED"<<htMod - 0.05;
                         pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -1.0);
-                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - htInc);
                         pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
                         adjusted = false;
                     }
@@ -1106,7 +1107,7 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
                     else
                     {
                         pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -3.0);
-                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + 0.05);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + htInc);
                         pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
                         adjusted = false;
                     }
@@ -1119,7 +1120,7 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
                     if (htMod < 4.0)
                     {
                         pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -2.0);
-                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + 0.05);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod + htInc);
                         pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
                         adjusted = false;
                     }
@@ -1143,7 +1144,7 @@ bool DamPoints::setPondAttributes(OGRFeature *pFeat, double lowarea, double mida
                     else
                     {
                         pFeat->SetField(QString("vol_"+qsLevels[i]).toStdString().c_str(), -3.0);
-                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - 0.05);
+                        pFeat->SetField(QString("ht_"+qsLevels[i]+"_mod").toStdString().c_str(), htMod - htInc);
                         pFeat->SetField(QString("diff_"+qsLevels[i]).toStdString().c_str(), qvVol[i] - pred);
                         adjusted = false;
                     }

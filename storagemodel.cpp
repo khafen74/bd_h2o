@@ -105,6 +105,7 @@ void StorageModel::createModflowInputs(DamPolygons pondExtents)
     {
         raster_bp.head(m_qvSurfaceWSEPaths[i].toStdString().c_str(), m_facPath, m_qvSurfaceDepthPaths[i].toStdString().c_str(), m_qvHead[i+1].toStdString().c_str());
     }
+    qDebug()<<"modflow inputs done";
 }
 
 /*
