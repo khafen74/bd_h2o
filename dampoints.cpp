@@ -445,7 +445,7 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
             pDamFeat->SetGeometry(&damPoint);
             //qDebug()<<"Field Values "<<i<<elev<<slope<<Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy)<<x<<y;
             //make sure point is located inside model domain (if the elevation value is NoData, outside domain)
-            if (elev > 0.0)
+            if (elev > 0.0 && end_elev > 0.0)
             {
                 if (pDamsLyr->CreateFeature(pDamFeat) != OGRERR_NONE)
                 {

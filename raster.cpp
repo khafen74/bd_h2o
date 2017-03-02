@@ -1253,6 +1253,7 @@ double Raster::sampleAlongLine_RasterVal(const char *checkRasPath, double startX
     if (!found)
     {
         reValue = lowValue;
+        reValue = -9999.0;
     }
 
     return reValue;
