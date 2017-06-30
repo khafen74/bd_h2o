@@ -468,6 +468,7 @@ int validate()
     * *****************************************************************************************************
     * type = 1 (default): distribute dams evenly on each reach according to BRAT capacity
     * type = 2: add a dam complex to best habitats first, then continue to lesser habitats
+    * type = 3: same as type 2 but updated to get actual 100% capacity
     * *****************************************************************************************************
     */
 
@@ -475,7 +476,7 @@ int validate()
     //model.runFromPoints(damsPath, csvPath);
     //model.runFromPoints(damsPath, csvPath, 1);
     //model.runFromPointsWithHeights(damsPath,csvPath, 3);
-    model.run(1);
+    model.run(3);
 
     return 0;
 }

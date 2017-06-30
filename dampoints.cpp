@@ -83,6 +83,11 @@ void DamPoints::init(const char *bratPath)
         sortByCapacity(pBratIn);
         createDamPoints_BRATcomplex(pBratIn, pDamsOut);
     }
+    else if (m_nDamPlace == 3)
+    {
+        sortByCapacity(pBratIn);
+        createDamPoints_BRATcomplex100(pBratIn, pDamsOut);
+    }
 
     OGRDataSource::DestroyDataSource(pInDs);
     OGRDataSource::DestroyDataSource(pOutDs);
@@ -109,7 +114,7 @@ void DamPoints::init(const char *bratPath, const char *exPath, int type)
     OGRLayer *pBratIn, *pDamsOut, *pDamsIn;
 
     //input shapefiles (located in BRAT directory)
-    pInDs = m_pDriverShp->CreateDataSource(m_qsBratDir.toStdString().c_str(), NULL);
+    pInDs = OGRSFDriverRegistrar::Open(m_qsBratDir.toStdString().c_str(), 1);
     //input shapefiles (located in input dams directory)
     pExDS = m_pDriverShp->CreateDataSource(exFilePath.toStdString().c_str(), NULL);
     //output shapefiles (directory specified as input
@@ -472,7 +477,24 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
 
 void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 {
-    qDebug()<<"starting dam points from BRAT. . . complex";
+    qDebug()<<"starting dam points from BRAT. . . complex 100% update";
+    OGRFieldDefn field("totdams", OFTInteger);
+
+    //delete dam and complex count fields if they already exist
+    if (pBratLyr->FindFieldIndex("totdams", 1)>=0)
+    {
+        pBratLyr->DeleteField(pBratLyr->FindFieldIndex("totdams", 1));
+    }
+    if (pBratLyr->FindFieldIndex("totcomp", 1)>=0)
+    {
+        pBratLyr->DeleteField(pBratLyr->FindFieldIndex("totcomp", 1));
+    }
+
+    //create dam and complex count fields
+    pBratLyr->CreateField(&field);
+    field.SetName("totcomp");
+    field.SetType(OFTInteger);
+    pBratLyr->CreateField(&field);
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
     double sampleDist = 50.0;
@@ -492,6 +514,50 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
     int nFeatures = pBratLyr->GetFeatureCount();
     qDebug()<<"features"<<nFeatures;
 
+    while (nTotalDams < floor(modCap))
+    {
+        //loop through all features in BRAT layer
+        int i=0;
+        bool stop = false;
+
+        while (i<nFeatures && !stop)
+        {
+            int nDamCount = 0;
+            pBratFeat = pBratLyr->GetFeature(m_qvBratFID[i]);
+            int exDams = pBratFeat->GetFieldAsInteger("totdams");
+            int exComp = pBratFeat->GetFieldAsInteger("totcomp");
+
+            //number of dams for a BRAT segment randomly selected from complex size distribution
+            nDamCount = ceil(Random::random_lognormal(1.5516125, 0.7239713));
+
+            if (nDamCount > 0)
+            {
+                if (nDamCount > m_qvMaxDams[i])
+                {
+                    //set equal to max reach capacity if complex size is larger than reach capacity
+                    nDamCount = m_qvMaxDams[i];
+                }
+                if ((nTotalDams + nDamCount) > modCap)
+                {
+                    //if maximum capacity for the area is reached reduce capacity at the final reach
+                    nDamCount = ceil(modCap - nTotalDams);
+                }
+
+                pBratFeat->SetField("totdams", exDams + nDamCount);
+                pBratFeat->SetField("totcomp", exComp + 1);
+                pBratLyr->SetFeature(pBratFeat);
+            }
+            nTotalDams += nDamCount;
+            i++;
+            if (nTotalDams >= floor(modCap))
+            {
+                stop = true;
+            }
+        }
+        qDebug()<<"finished iteration of complex placement";
+    }
+
+    nTotalDams = 0;
     //loop through all features in BRAT layer
     int i=0;
     bool stop = false;
@@ -1135,10 +1201,12 @@ void DamPoints::sortByCapacity(OGRLayer *pBratLyr)
             qDebug()<<"adding first obs";
             m_qvBratFID.append(nFid);
             m_qvCapacityRank.append(capacity);
+            m_qvMaxDams.append(maxDams);
             qDebug()<<"first added";
         }
     }
     OGRFeature::DestroyFeature(pBratFeat);
+    //qDebug()<<"These should be the same"<<m_qvCapacityRank.length()<<m_qvBratFID.length()<<m_qvMaxDams.length();
 
 //    qDebug()<<"BRAT segment RANK TESTING";
 //    for (int i=0; i< m_qvCapacityRank.length(); i++)
