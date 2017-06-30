@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     QDateTime startTime = QDateTime::currentDateTime();
 
     //test();
-    //validate();
+    validate();
     //logan();
     //testStats();
     //runXYZ();
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     //soilFixer();
     //bridgeCreekGW();
     //bearRiverAnalysis();
-    addStorage();
+    //addStorage();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -332,13 +332,13 @@ int validate()
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/03_out/comparison.csv";
 
     //Recursive with Ogden NF 10m inputs
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/brat.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/dem_vb.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fdird10m_vb.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fac10m_5000.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/dams_brat_join.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out/comparison.csv";
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/brat.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fdird10m_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fac10m_5000.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/dams_brat_join.shp";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out/comparison.csv";
 
     //Recursive with Logan HUC 8 inputs
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan100/01_shpIn/brat.shp";
@@ -412,6 +412,16 @@ int validate()
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/01_shpIn/dams_20160629.shp";
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/03_out/comparison.csv";
 
+    //Test recursive HAND algorithm with Laptop
+    const char *bratPath = "C:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/01_shpIn/BRAT_TempleFk_WS.shp";
+    const char *demPath = "C:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/dem_vb.tif";
+    const char *fdirPath = "C:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/fdird10m_vb.tif";
+    const char *facPath = "C:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/fac_2500_vb.tif";
+    const char *outDir = "C:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/03_out";
+    const char *damsPath = "C:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/01_shpIn/DamArea_BRAT_joined.shp";
+    const char *csvPath = "C:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/03_out/comparison.csv";
+
+
     Raster raster;
     raster.setNoData(demPath, -9999.0, 50, 5000);
     raster.setNoData(fdirPath, 0, 1, 200);
@@ -436,10 +446,10 @@ int validate()
  */
 
     //Initialize surface storage model with statistical correction
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
+    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
 
     //Initialize surface storage model without statistical correction
-    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3);
 
  /*
  * *****************************************************************************************************
@@ -464,8 +474,8 @@ int validate()
     // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
     //model.runFromPoints(damsPath, csvPath, 1);
-    model.runFromPointsWithHeights(damsPath,csvPath, 3);
-    //model.run(2);
+    //model.runFromPointsWithHeights(damsPath,csvPath, 3);
+    model.run(1);
 
     return 0;
 }
