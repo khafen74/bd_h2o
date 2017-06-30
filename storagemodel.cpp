@@ -138,7 +138,7 @@ void StorageModel::runFromPoints(const char *damsIn, const char *csvOut, int nRu
         m_nType = 2;
     }
     qDebug()<<"starting dam points";
-    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap, damsIn, nRunType);
+    DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap, damsIn, 2);
     qDebug()<<"starting pond polys";
     DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
     ReachLines reachStorage(pondPoints);

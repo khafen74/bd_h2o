@@ -14,6 +14,7 @@ int runXYZ();
 int soil();
 int soilFixer();
 int bridgeCreekGW();
+int addStorage();
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +30,8 @@ int main(int argc, char *argv[])
     //soil();
     //soilFixer();
     //bridgeCreekGW();
-    bearRiverAnalysis();
+    //bearRiverAnalysis();
+    addStorage();
 
     QDateTime endTime = QDateTime::currentDateTime();
 
@@ -40,7 +42,8 @@ int main(int argc, char *argv[])
 
 int bearRiverAnalysis()
 {
-    QString dirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010102/HUC12";
+    // Run suface storage for 0.05, 0.1, 0.25, 0.5, 0.75, and 1.0 of capacity
+    QString dirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010204/HUC12";
     QDir dir(dirPath);
     QFileInfoList fiList = dir.entryInfoList();
     const char *statPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/csv/volume_estimates.tif";
@@ -51,15 +54,15 @@ int bearRiverAnalysis()
         qDebug()<<fiList[i].baseName();
         std::string basePath = dirPath.toStdString() + "/" + fiList[i].baseName().toStdString();
         QString qBasePath = dirPath + fiList[i].baseName();
-        if (!QDir(qBasePath + "/03_out_50").exists())
+        if (!QDir(qBasePath + "/03_out_100").exists())
         {
-            QDir().mkdir(qBasePath + "/03_out_50");
+            QDir().mkdir(qBasePath + "/03_out_100");
         }
         std::string bratPath = basePath + "/01_shpIn/brat_cap_20170224.shp";
-        std::string outDir = basePath + "/03_out_50";
+        std::string outDir = basePath + "/03_out_100";
         std::string demPath = basePath + "/02_rasIn/dem_vb.tif";
         std::string filPath = basePath + "/02_rasIn/fil_vb.tif";
-        std::string facPath = basePath + "/02_rasIn/fac_1km_vb.tif";
+        std::string facPath = basePath + "/02_rasIn/fac_01km_vb.tif";
         std::string fdirPath = basePath + "/02_rasIn/fdird_vb.tif";
         //qDebug()<<"names set"<<bratPath.toStdString().c_str()<<outDir.toStdString().c_str()<<demPath.toStdString().c_str()<<facPath.toStdString().c_str()<<fdirPath.toStdString().c_str();
 
@@ -231,8 +234,8 @@ int validate()
 
 //    //Temple Fork 10m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/01_shpIn/BRAT_TempleFk_WS.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/02_rasIn/fil10m_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/02_rasIn/fdir10m_vb.tif";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/02_rasIn/fdird10m_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/02_rasIn/fac_2500_vb.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_10m_vol/01_shpIn/input.shp";
@@ -258,8 +261,8 @@ int validate()
 
     //Temple Fork 1m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/01_shpIn/BRAT_TempleFk_WS.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/02_rasIn/fil1m_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/02_rasIn/fdir1m_vb.tif";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/02_rasIn/fdird1m_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/02_rasIn/fac_200000_vb.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/TempleFork_1m_vol/01_shpIn/input.shp";
@@ -303,8 +306,8 @@ int validate()
 
     //Test recursive HAND algorithm
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/01_shpIn/BRAT_TempleFk_WS.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/fil10m_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/fdir10m_vb.tif";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/fdird10m_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/02_rasIn/fac_2500_vb.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTest/01_shpIn/DamArea_BRAT_joined.shp";
@@ -313,7 +316,7 @@ int validate()
     //Recursive with Temple Fork 1m inputs
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestTF1m/01_shpIn/BRAT_TempleFk_WS.shp";
 //    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestTF1m/02_rasIn/dem_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestTF1m/02_rasIn/fdir1m_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestTF1m/02_rasIn/fdird1m_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestTF1m/02_rasIn/fac_200000_vb.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestTF1m/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestTF1m/01_shpIn/DamArea_BRAT_joined.shp";
@@ -322,20 +325,20 @@ int validate()
     //Recursive with Ogden NF 1m inputs
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/01_shpIn/brat.shp";
 //    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/02_rasIn/dem_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/02_rasIn/fdir1m.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/02_rasIn/fdird1m_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/02_rasIn/fac1m_500000.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/01_shpIn/dams_brat_join.shp";
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO1m/03_out/comparison.csv";
 
     //Recursive with Ogden NF 10m inputs
-//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/brat.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/dem_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fdir10m.tif";
-//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fac10m_5000.tif";
-//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out";
-//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/dams_brat_join.shp";
-//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out/comparison.csv";
+    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/brat.shp";
+    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/dem_vb.tif";
+    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fdird10m_vb.tif";
+    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/02_rasIn/fac10m_5000.tif";
+    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out";
+    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/01_shpIn/dams_brat_join.shp";
+    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/z_RecursiveTestNFO10m/03_out/comparison.csv";
 
     //Recursive with Logan HUC 8 inputs
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/Logan100/01_shpIn/brat.shp";
@@ -357,8 +360,8 @@ int validate()
 
     //Bridge Creek 10m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/01_shpIn/BRAT_bcHUC10.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/02_rasIn/fil_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/02_rasIn/fdir_vb.tif";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/02_rasIn/fdird_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/02_rasIn/fac_50000_vb.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_10m_vol/01_shpIn/points_snap.shp";
@@ -366,8 +369,8 @@ int validate()
 
     //Bridge Creek 1m inputs volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/01_shpIn/BRAT_bcHUC10.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fil_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fdir_vb.tif";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fdird_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/02_rasIn/fac_1mil_vb.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/BridgeCreek_1m_vol/01_shpIn/points_snap.shp";
@@ -375,8 +378,8 @@ int validate()
 
     //Curtis Creek 10m inputs (whole Logan HUC 8) volume comparison
 //    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/01_shpIn/brat.shp";
-//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/02_rasIn/fil10m_vb.tif";
-//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/02_rasIn/fdir10m_vb.tif";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/02_rasIn/fdird10m_vb.tif";
 //    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/02_rasIn/fac10m_vb.tif";
 //    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/03_out";
 //    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/ValidationRuns/CurtisCreek_10m_vol/01_shpIn/points_snap.shp";
@@ -401,13 +404,14 @@ int validate()
 //    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/160102030308/03_out/comparison.csv";
 
     //Test algorithm limiting pond size
-    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/01_shpIn/brat_cap_20170224.shp";
-    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fil_vb.tif";
-    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fdir_vb.tif";
-    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fac_1km_vb.tif";
-    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/03_out";
-    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/01_shpIn/points_snap.shp";
-    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/03_out/comparison.csv";
+//    const char *bratPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/01_shpIn/brat.shp";
+//    const char *demPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/dem_vb.tif";
+//    const char *fdirPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fdird_vb.tif";
+//    const char *facPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/02_rasIn/fac_1km_vb.tif";
+//    const char *outDir = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/03_out";
+//    const char *damsPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/01_shpIn/dams_20160629.shp";
+//    const char *csvPath = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/16010203/03_out/comparison.csv";
+
     Raster raster;
     raster.setNoData(demPath, -9999.0, 50, 5000);
     raster.setNoData(fdirPath, 0, 1, 200);
@@ -432,9 +436,10 @@ int validate()
  */
 
     //Initialize surface storage model with statistical correction
-    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
+
     //Initialize surface storage model without statistical correction
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3);
+    //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3);
 
  /*
  * *****************************************************************************************************
@@ -459,8 +464,8 @@ int validate()
     // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
     //model.runFromPoints(damsPath, csvPath, 1);
-    //model.runFromPointsWithHeights(damsPath,csvPath, 3);
-    model.run(2);
+    model.runFromPointsWithHeights(damsPath,csvPath, 3);
+    //model.run(2);
 
     return 0;
 }
@@ -583,11 +588,11 @@ int soil()
 int soilFixer()
 {
     //Bear River
-    const char *dem = "F:/01_etal/GIS_Data/USA/DEM/NED_10m/Utah/BearRiver/HUC8/16010101/dem_vb.tif";
-    const char *huc8 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC8.tif";
-    const char *huc12 = "F:/01_etal/GIS_Data/USA/NHD/USA/Utah/Watersheds/BearRiverNHD/HUC12.tif";
-    const char *soil = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/EntireDrianage/fc_frompoly.tif";
-    const char *out = "F:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/fc_vb.tif";
+    const char *dem = "G:/01_etal/GIS_Data/USA/DEM/NED_10m/Utah/BearRiver/HUC8/16010101/dem_vb.tif";
+    const char *huc8 = "G:/01_etal/GIS_Data/USA/NHD/Utah/Watersheds/BearRiverNHD/HUC8.tif";
+    const char *huc12 = "G:/01_etal/GIS_Data/USA/NHD/Utah/Watersheds/BearRiverNHD/HUC12.tif";
+    const char *soil = "G:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/EntireDrianage/fc_frompoly.tif";
+    const char *out = "G:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/fc_vb.tif";
 
     double kvmax = 229.0;
     double ksatmax = 345.0;
@@ -607,8 +612,8 @@ int soilFixer()
 
     Raster_BeaverPond fixer;
     qDebug()<<"starting soil raster function";
-    //fixer.soilRasterCreation(dem, huc8, huc12, soil, out, pormax);
-    fixer.soilRasterCreation_table(dem, huc8, huc12, out, 100.0);
+    fixer.soilRasterCreation(dem, huc8, huc12, soil, out, pormax);
+    //fixer.soilRasterCreation_table(dem, huc8, huc12, out, 100.0);
     qDebug()<<"done";
 }
 
@@ -673,9 +678,22 @@ int bridgeCreekGW()
 
     // Run surface storage model
     //model.runFromPoints(damsPath, csvPath);
-    model.runFromPoints(damsPath, csvPath, 1);
-    //model.runFromPointsWithHeights(damsPath,csvPath, 3);
+    //model.runFromPoints(damsPath, csvPath, 3);
+    model.runFromPointsWithHeights(damsPath,csvPath, 3);
     //model.run(2);
+
+    return 0;
+}
+
+int addStorage()
+{
+    Raster raster;
+
+    const char *gw = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/EntireBasin/out_100/hdch_mid_m3.tif";
+    const char *sw = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/EntireBasin/out_100/depMid_m.tif";
+    const char *out = "F:/01_etal/Projects/Modeling/BeaverWaterStorage/wrk_Data/AnalysisRuns/BearRiverHUC8/EntireBasin/out_100/totalMid.tif";
+
+    raster.add(gw, sw, out);
 
     return 0;
 }

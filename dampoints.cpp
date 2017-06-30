@@ -39,6 +39,7 @@ DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facP
 //model locations of existing dams (exPath), type determines if dams are moved to flow accumulation (1) or not moved (2)
 DamPoints::DamPoints(const char *demPath, const char *bratPath, const char *facPath, const char *statPath, const char *outDirPath, double modCap, const char *exPath, int type)
 {
+    qDebug()<<"running from points";
     m_statPath = statPath;
     setDemPath(demPath);
     setFacPath(facPath);
@@ -89,6 +90,7 @@ void DamPoints::init(const char *bratPath)
 
 void DamPoints::init(const char *bratPath, const char *exPath, int type)
 {
+    qDebug()<<"initializing";
     m_layerName = "ModeledDamPoints";
     loadDriver();
 
@@ -201,6 +203,7 @@ void DamPoints::compareArea(const char *damsIn, const char *csvOut)
 
 void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 {
+    qDebug()<<"starting dam points from BRAT";
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
     double sampleDist = 50.0;
@@ -325,6 +328,7 @@ void DamPoints::createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 
 void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsLyr)
 {
+    qDebug()<<"starting dam points from BRAT. . . complex";
     const char *slopeField = "iGeo_Slope";
     const char *densField = "oCC_EX";
     double sampleDist = 50.0;
@@ -466,10 +470,10 @@ void DamPoints::createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsL
     OGRFeature::DestroyFeature(pBratFeat);
 }
 
-//Create dam points to model from dams with measured heights. Modeled dam points moved to flow accumulation raster
+//Create dam points to model from known dam locations. Modeled dam points moved to flow accumulation raster
 void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
 {
-    qDebug()<<"starting dam points";
+    qDebug()<<"starting dam points from points";
     const char *slopeField = "iGeo_Slope";
     double sampleDist = 100.0;
     OGRFeature *pBratFeat, *pOldFeat;
@@ -495,10 +499,13 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
         double az = Geometry::calcAzimuth(pBratLine->getX(pBratLine->getNumPoints()-1), pBratLine->getY(pBratLine->getNumPoints()-1), pBratLine->getX(0), pBratLine->getY(0));
         double rnum = ((double) rand() / (RAND_MAX));
         double dht;
+        //Heigth distribution for secondary dams
         Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
         dht = Random::random_normal(0.92, 0.17);
+        //Primary dam
         if (rnum <= 0.15)
         {
+            //Height distribution for primary dams
             normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
             dht = Random::random_normal(1.14, 0.19);
             nPrimary++;
@@ -542,6 +549,7 @@ void DamPoints::createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGR
 //Create dam points to model at same location as input dam points. If dam extents created wtih polygons output will have errors
 void DamPoints::createDamPoints_CopyLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
 {
+    qDebug()<<"starting dam points from points copy location";
     const char *slopeField = "iGeo_Slope";
     //double sampleDist = 50.0;
     OGRFeature *pBratFeat, *pOldFeat;
@@ -610,6 +618,7 @@ void DamPoints::createDamPoints_CopyLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, 
 //Create dam points to model from dams with measured heights. Modeled dam points moved to flow accumulation raster
 void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr)
 {
+    qDebug()<<"starting dam points height";
     const char *slopeField = "iGeo_Slope";
     double sampleDist = 50.0;
     OGRFeature *pBratFeat, *pOldFeat;
@@ -621,7 +630,7 @@ void DamPoints::createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, 
     {
         pOldFeat = pExLyr->GetFeature(i);
         int nBratFID = pOldFeat->GetFieldAsInteger("ID");
-        double damHeight = pOldFeat->GetFieldAsDouble("d_ht_m"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m", for volume comparison "d_ht_m"
+        double damHeight = pOldFeat->GetFieldAsDouble("DamHt_m"); //Field name for Temple Fork data is "Dam_Height", for all others "DamHt_m", for volume comparison "d_ht_m"
         pBratFeat = pBratLyr->GetFeature(nBratFID);
         double slope = pBratFeat->GetFieldAsDouble(slopeField);
         OGRGeometry *pGeom = pBratFeat->GetGeometryRef();

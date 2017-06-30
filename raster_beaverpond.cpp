@@ -852,7 +852,7 @@ void Raster_BeaverPond::soilRasterCreation(const char *demPath, const char *huc8
 void Raster_BeaverPond::soilRasterCreation_table(const char *demPath, const char *huc8Path, const char *huc12Path, const char *soilPath, double maxVal)
 {
     QVector<double> id8, mean8, id12, mean12;
-    QFile fileh8 ("huc8.csv");
+    QFile fileh8 ("G:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/huc8_fc.csv");
     if (!fileh8.open(QIODevice::ReadOnly))
     {
         qDebug()<<"error opening file";
@@ -866,7 +866,7 @@ void Raster_BeaverPond::soilRasterCreation_table(const char *demPath, const char
         qDebug()<<id8.last()<<mean8.last();
     }
     fileh8.close();
-    QFile fileh12 ("huc12.csv");
+    QFile fileh12 ("G:/01_etal/GIS_Data/USA/Soil/SSURGO/Utah/BearRiver/16010101_UpperBear/huc12_fc.csv");
     if (!fileh12.open(QIODevice::ReadOnly))
     {
         qDebug()<<"error opening file";
