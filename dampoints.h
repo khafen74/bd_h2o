@@ -23,6 +23,7 @@ public:
     void compareArea(const char *damsIn, const char *csvOut);
     void createDamPoints_BRAT(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
     void createDamPoints_BRATcomplex(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
+    void createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDamsLyr);
     void createDamPoints_Copy(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createDamPoints_CopyLoc(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
     void createDamPoints_Heights(OGRLayer *pBratLyr, OGRLayer *pDamsLyr, OGRLayer *pExLyr);
