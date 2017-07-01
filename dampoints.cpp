@@ -562,6 +562,7 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
 
     //loop through all features in BRAT layer
     int i=0;
+    const char *damType;
     while (i<nFeatures)
     {
         //qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
@@ -629,11 +630,13 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
                 normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
                 dht = Random::random_normal(1.14, 0.19);
                 nPrimary++;
+                damType = "primary";
                 compRemain--;
             }
             else
             {
                 nSecondary++;
+                damType = "secondary";
             }
             //set point location on BRAT segment
             pBratLine->Value(pointDist, &damPoint);
@@ -652,6 +655,7 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
             double loHt, midHt, hiHt, maxHt;
             loHt = normDist.getQuantile(0.025), midHt = normDist.getQuantile(0.5), hiHt = normDist.getQuantile(0.975), maxHt = VectorOps::max(normDist.getData());
             setDamHeights(pDamFeat, loHt*loHt, midHt*midHt, hiHt*hiHt, maxHt*maxHt);
+            pDamFeat->SetField("damType", damType);
 
             pDamFeat->SetGeometry(&damPoint);
             //qDebug()<<"Field Values "<<i<<elev<<slope<<Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy)<<x<<y;
@@ -930,6 +934,9 @@ void DamPoints::createFields(OGRLayer *pLayer)
     pLayer->CreateField(&field);
     field.SetName("ht_max");
     field.SetType(OFTReal);
+    pLayer->CreateField(&field);
+    field.SetName("damType");
+    field.SetType(OFTString);
     pLayer->CreateField(&field);
     field.SetName("ht_lo");
     field.SetType(OFTReal);
