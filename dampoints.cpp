@@ -544,7 +544,10 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
                 }
 
                 pBratFeat->SetField("totdams", exDams + nDamCount);
-                pBratFeat->SetField("totcomp", exComp + 1);
+                if(m_qvMaxDams[i] >= 1.0)
+                {
+                    pBratFeat->SetField("totcomp", exComp + 1);
+                }
                 pBratLyr->SetFeature(pBratFeat);
             }
             nTotalDams += nDamCount;
@@ -557,14 +560,13 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
         qDebug()<<"finished iteration of complex placement";
     }
 
-    nTotalDams = 0;
     //loop through all features in BRAT layer
     int i=0;
-    bool stop = false;
-    while (i<nFeatures && !stop)
+    while (i<nFeatures)
     {
         //qDebug()<<"BRAT reach "<<i<<" of "<<nFeatures;
-        int nDamCount = 0, nErrCount = 0;
+        int nErrCount = 0;
+        int nDamCount, nCompCount;
         double length, slope, spacing, elev, azimuthStart, endx, endy, end_elev;
         OGRPoint point1, point2;
         //get BRAT feature
@@ -587,33 +589,27 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
         slope = pBratFeat->GetFieldAsDouble(slopeField);
 
         //number of dams for a BRAT segment randomly selected from complex size distribution
-        nDamCount = ceil(Random::random_lognormal(1.5516125, 0.7239713));
+        nDamCount = pBratFeat->GetFieldAsInteger("totdams");
+        nCompCount = pBratFeat->GetFieldAsInteger("totcomp");
         //qDebug()<<nDams<<damDens/1000.0<<nDamCount<<m_modCap<<length;
 
         if (nDamCount > 0)
         {
-            if (nDamCount > m_qvMaxDams[i])
-            {
-                nDamCount = m_qvMaxDams[i];
-            }
-            if ((nTotalDams + nDamCount) > modCap)
-            {
-                nDamCount = ceil(modCap - nTotalDams);
-            }
-            //distance between dams
             spacing = length / (nDamCount*1.0);
         }
         else
         {
             spacing = 0.0;
         }
-        nTotalDams += nDamCount;
         //calculate azimuth (from start to end) of BRAT segment
         azimuthStart = Geometry::calcAzimuth(point2.getX(), point2.getY(), point1.getX(), point1.getY());
         //find elevation on stream network closest to dam point (on line perpendicular to BRAT segment)
         end_elev = raster_dem.sampleAlongLine_RasterVal(m_demPath, m_facPath, pBratLine->getX(0), pBratLine->getY(0), azimuthStart, sampleDist, endx, endy);
 
         //create a point for each dam to be modeled on BRAT segment
+        int damReamin = nDamCount;
+        int compRemain = nCompCount;
+
         for (int j=0; j<nDamCount; j++)
         {
             //location of modeled dam
@@ -627,12 +623,13 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
             Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
             dht = Random::random_normal(0.92, 0.17);
             //Primary dam
-            if (rnum <= 0.15)
+            if (rnum <= (compRemain*1.0)/(damReamin*1.0))
             {
                 //Height distribution for primary dams
                 normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
                 dht = Random::random_normal(1.14, 0.19);
                 nPrimary++;
+                compRemain--;
             }
             else
             {
@@ -667,10 +664,7 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
                     qDebug()<<"error writing dam point "<<nErrCount;
                 }
             }
-        }
-        if (nTotalDams >= modCap)
-        {
-            stop = true;
+            damReamin--;
         }
         i++;
     }
