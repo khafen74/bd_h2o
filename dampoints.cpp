@@ -496,9 +496,7 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
     field.SetType(OFTInteger);
     pBratLyr->CreateField(&field);
     const char *slopeField = "iGeo_Slope";
-    const char *densField = "oCC_EX";
     double sampleDist = 50.0;
-    long lastFID = -9999;
     double maxCap = VectorOps::sum(m_qvMaxDams);
     double modCap = maxCap * m_modCap;
     int nTotalDams = 0, nPrimary = 0, nSecondary = 0;
@@ -514,7 +512,7 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
     int nFeatures = pBratLyr->GetFeatureCount();
     qDebug()<<"features"<<nFeatures;
 
-    while (nTotalDams < floor(modCap))
+    while (nTotalDams < ceil(modCap))
     {
         //loop through all features in BRAT layer
         int i=0;
@@ -532,10 +530,10 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
 
             if (nDamCount > 0)
             {
-                if (nDamCount > m_qvMaxDams[i])
+                if (nDamCount > ceil(m_qvMaxDams[i]))
                 {
                     //set equal to max reach capacity if complex size is larger than reach capacity
-                    nDamCount = m_qvMaxDams[i];
+                    nDamCount = ceil(m_qvMaxDams[i]);
                 }
                 if ((nTotalDams + nDamCount) > modCap)
                 {
@@ -552,7 +550,7 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
             }
             nTotalDams += nDamCount;
             i++;
-            if (nTotalDams >= floor(modCap))
+            if (nTotalDams >= ceil(modCap))
             {
                 stop = true;
             }
@@ -623,20 +621,40 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
             //Heigth distribution for secondary dams
             Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
             dht = Random::random_normal(0.92, 0.17);
-            //Primary dam
-            if (rnum <= (compRemain*1.0)/(damReamin*1.0))
+
+            //Different dam type determination methods for different sized dam complexes
+            if (nDamCount > 2)
             {
-                //Height distribution for primary dams
-                normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
-                dht = Random::random_normal(1.14, 0.19);
-                nPrimary++;
-                damType = "primary";
-                compRemain--;
+                if (rnum <= (compRemain*1.0)/(damReamin*1.0))
+                {
+                    //Height distribution for primary dams
+                    normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
+                    dht = Random::random_normal(1.14, 0.19);
+                    nPrimary++;
+                    damType = "primary";
+                    compRemain--;
+                }
+                else
+                {
+                    nSecondary++;
+                    damType = "secondary";
+                }
             }
+            //For small complexes
             else
             {
-                nSecondary++;
-                damType = "secondary";
+                if (rnum <= 0.15)
+                {
+                    normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
+                    dht = Random::random_normal(1.14, 0.19);
+                    nPrimary++;
+                    damType = "primary";
+                }
+                else
+                {
+                    nSecondary++;
+                    damType = "secondary";
+                }
             }
             //set point location on BRAT segment
             pBratLine->Value(pointDist, &damPoint);

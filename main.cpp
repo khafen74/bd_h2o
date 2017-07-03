@@ -449,7 +449,7 @@ int validate()
     //StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3, statPath);
 
     //Initialize surface storage model without statistical correction
-    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 1.0, 3);
+    StorageModel model(bratPath, outDir, demPath, fdirPath, facPath, 0.5, 3);
 
  /*
  * *****************************************************************************************************
