@@ -11,18 +11,18 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
     //Represents maximum dam height
     double maxHeight = 4.0;
 
-    if (startX > 0 && startY > 0)
+    if (startX > 0 && startY > 0 && m_BHiter < m_maxBHiter)
     {
         for (int i=0; i<9; i++)
         {
-            //qDebug()<<"assigning vars";
+
+            m_BHiter++;
             unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
             float *demWin = (float*) CPLMalloc(sizeof(float)*9);
             float *htAbove = (float*) CPLMalloc(sizeof(float)*1);
             float *htOld = (float*) CPLMalloc(sizeof(float)*1);
-            //qDebug()<<"read fdir";
+
             flowDir->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
-            //qDebug()<<"read dem";
             dem->GetRasterBand(1)->RasterIO(GF_Read, startX-1, startY-1, 3, 3, demWin, 3, 3, GDT_Float32, 0, 0);
 
             int newX = startX;
@@ -32,18 +32,14 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
             //Index cell must drain to target cell
             if (drainsToMe(i, fdirWin[i]) && *htAbove < maxHeight && *htAbove > -10.0 && count < maxCount)
             {
-
-                //qDebug()<<"pond cell counts"<<count<<"of"<<maxCount;
                 newX += COL_OFFSET[i];
                 newY += ROW_OFFSET[i];
                 out->GetRasterBand(1)->RasterIO(GF_Read, newX, newY, 1, 1, htOld, 1, 1, GDT_Float32, 0, 0);
 
                 //Only write new value if it is less than previous value (deepest pond always wins)
-                if (*htOld >= *htAbove || *htOld < -10.0)
+                if (*htOld >= *htAbove || *htOld <= 0.0)
                 {
-                    //qDebug()<<"write pond id";
                     idOut->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, pondID, 1, 1, GDT_Float32, 0, 0);
-                    //qDebug()<<"write ht above";
                     out->GetRasterBand(1)->RasterIO(GF_Write, newX, newY, 1, 1, htAbove, 1, 1, GDT_Float32, 0, 0);
                     count++;
                 }
@@ -55,9 +51,7 @@ void Raster_BeaverPond::backwardHAND(GDALDataset *flowDir, GDALDataset *dem, GDA
 
                 //If pond is less than max size run algorithm again
 
-                //qDebug()<<"bwh-2start";
                 backwardHAND(flowDir, dem, idOut, out, newX, newY, startE, pondID, maxCount, count);
-                //qDebug()<<"bwh-2 done";
             }
             else
             {
@@ -644,6 +638,7 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
     unsigned char *fdirWin = (unsigned char*) CPLMalloc(sizeof(unsigned char)*9);
 
     int maxCount = ceil(maxPondArea/abs(transform[1]*transform[5]));
+    m_maxBHiter = ceil(1000000.0/abs(transform[1]*transform[5]));
     qDebug()<<"max cell count per pond"<<maxCount;
 
     for (int i=1; i<nRows-1; i++)
@@ -654,21 +649,19 @@ void Raster_BeaverPond::pondDepth_backwardHAND(const char *demPath, const char *
 
             if (*idVal >= 0.0)
             {
-                //qDebug()<<"row"<<i+1<<*idVal;
                 pDem->GetRasterBand(1)->RasterIO(GF_Read, j, i, 1, 1, demVal, 1, 1, GDT_Float32, 0, 0);
                 pFdir->GetRasterBand(1)->RasterIO(GF_Read, j-1, i-1, 3, 3, fdirWin, 3, 3, GDT_Byte, 0, 0);
 
                 for (int l=0; l<9; l++)
                 {
                     int count=0;
+                    m_BHiter = 0;
                     int maxCount6 = ceil(maxCount/6.0);
                     double startE = *demVal;
 
                     //Meat of the algorithm, a recursive function
-                    //qDebug()<<"starting bwh";
                     backwardHAND(pFdir, pDem, pIdOut, pHeight, j, i, startE, idVal, maxCount6, count);
                 }
-                //qDebug()<<"bwh done";
             }
         }
         //qDebug()<<"row"<<i<<"done of"<<nRows;
@@ -771,7 +764,10 @@ void Raster_BeaverPond::soilRasterCreation(const char *demPath, const char *huc8
         }
 
         pOutDs->GetRasterBand(1)->RasterIO(GF_Write, 0, i, nCols, 1, outRow, nCols, 1, GDT_Float32, 0, 0);
-        qDebug()<<"row"<<i+1<<"of"<<nRows;
+        if (i % 1000 == 0)
+        {
+            qDebug()<<"row"<<i+1<<"of"<<nRows;
+        }
     }
 
     for (int i=0; i<nRows; i++)

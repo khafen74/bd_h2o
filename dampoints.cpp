@@ -71,6 +71,12 @@ void DamPoints::init(const char *bratPath)
     pBratIn = pInDs->GetLayerByName(m_qsBratName.toStdString().c_str());
     pDamsOut = pOutDs->CreateLayer(m_layerName, pBratIn->GetSpatialRef(), wkbPoint, NULL);
 
+    if (pBratIn->GetFeatureCount()==0)
+    {
+        m_success = false;
+        return;
+    }
+
     //create fields for modeled dam points
     createFields(pDamsOut);
     //create modeled dam points based on BRAT estimates
@@ -619,43 +625,43 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
             double rnum = ((double) rand() / (RAND_MAX));
             double dht;
             //Heigth distribution for secondary dams
-            Statistics normDist(Random::randomSeries(1000, RDT_norm, 0.92, 0.17), RDT_norm);
+            Statistics normDist(Random::randomSeries(30, RDT_norm, -0.21, 0.39), RDT_norm);
             dht = Random::random_normal(0.92, 0.17);
 
             //Different dam type determination methods for different sized dam complexes
-            if (nDamCount > 2)
+//            if (nDamCount > 2)
+//            {
+            if ((rnum <= (compRemain*1.0)/(damReamin*1.0)) || nDamCount == 1)
             {
-                if (rnum <= (compRemain*1.0)/(damReamin*1.0))
-                {
-                    //Height distribution for primary dams
-                    normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
-                    dht = Random::random_normal(1.14, 0.19);
-                    nPrimary++;
-                    damType = "primary";
-                    compRemain--;
-                }
-                else
-                {
-                    nSecondary++;
-                    damType = "secondary";
-                }
+                //Height distribution for primary dams
+                normDist.setSample(Random::randomSeries(30, RDT_norm, 0.22, 0.36));
+                dht = Random::random_normal(0.22, 0.36);
+                nPrimary++;
+                damType = "primary";
+                compRemain--;
             }
-            //For small complexes
             else
             {
-                if (rnum <= 0.15)
-                {
-                    normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
-                    dht = Random::random_normal(1.14, 0.19);
-                    nPrimary++;
-                    damType = "primary";
-                }
-                else
-                {
-                    nSecondary++;
-                    damType = "secondary";
-                }
+                nSecondary++;
+                damType = "secondary";
             }
+//            }
+            //For small complexes
+//            else
+//            {
+//                if (rnum <= 0.15)
+//                {
+//                    normDist.setSample(Random::randomSeries(1000, RDT_norm, 1.14, 0.19));
+//                    dht = Random::random_normal(1.14, 0.19);
+//                    nPrimary++;
+//                    damType = "primary";
+//                }
+//                else
+//                {
+//                    nSecondary++;
+//                    damType = "secondary";
+//                }
+//            }
             //set point location on BRAT segment
             pBratLine->Value(pointDist, &damPoint);
             //location of dam point
@@ -672,7 +678,8 @@ void DamPoints::createDamPoints_BRATcomplex100(OGRLayer *pBratLyr, OGRLayer *pDa
             setFieldValues(pDamFeat, i, elev, slope, Geometry::calcAzimuth(damPoint.getX(), damPoint.getY(), endx, endy), x, y);
             double loHt, midHt, hiHt, maxHt;
             loHt = normDist.getQuantile(0.025), midHt = normDist.getQuantile(0.5), hiHt = normDist.getQuantile(0.975), maxHt = VectorOps::max(normDist.getData());
-            setDamHeights(pDamFeat, loHt*loHt, midHt*midHt, hiHt*hiHt, maxHt*maxHt);
+            setDamHeights(pDamFeat, exp(loHt), exp(midHt), exp(hiHt), exp(maxHt));
+            qDebug()<<exp(loHt)<<exp(midHt)<<exp(hiHt)<<damType;
             pDamFeat->SetField("damType", damType);
 
             pDamFeat->SetGeometry(&damPoint);
@@ -1043,6 +1050,11 @@ QString DamPoints::getBratName()
     return m_qsBratName;
 }
 
+bool DamPoints::getSuccess()
+{
+    return m_success;
+}
+
 const char *DamPoints::getDemPath()
 {
     return m_demPath;
@@ -1101,7 +1113,7 @@ void DamPoints::setDamHeights(OGRFeature *pFeat, double low, double mid, double 
     {
         Raster raster;
         int x_lo = low/0.05 - 2, x_mid = mid/0.05 - 2, x_hi = high/0.05 - 2, y = slp/0.005;
-        qDebug()<<high<<x_lo<<x_mid<<x_hi<<y;
+        //qDebug()<<high<<x_lo<<x_mid<<x_hi<<y;
 //        if (x_lo == 0)
 //        {
 //            x_lo = 1;

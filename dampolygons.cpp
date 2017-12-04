@@ -62,6 +62,7 @@ void DamPolygons::init(DamPoints pondPts)
         summarizePondDepths_raster(pPts_lyr);
         qDebug()<<"finished summary";
     }
+    //uses recursive HAND algorithm
     else if (m_nType == 3)
     {
         createHandInput_ponds(pPts_lyr);

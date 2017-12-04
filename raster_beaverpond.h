@@ -28,6 +28,10 @@ public:
     void subtractHAND(const char *endPath, const char *outPath);
     void subtractHAND(const char *startPath, const char *endPath, const char *outPath);
     //void waterSurfaceElevation(const char *sourcePath, const char *waterDepth, const char *outPath);
+
+private:
+    int m_maxBHiter;
+    int m_BHiter;
 };
 
 #endif // RASTER_BEAVERPOND_H

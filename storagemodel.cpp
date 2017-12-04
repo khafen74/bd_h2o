@@ -121,13 +121,20 @@ void StorageModel::run(int nPlaceType)
     cleanOutDir();
     qDebug()<<"starting points";
     DamPoints pondPoints(m_demPath, m_bratPath, m_facPath, m_statPath, m_outPath, bratCap, nPlaceType);
-    qDebug()<<"starting polys";
-    DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
-    qDebug()<<"finished polys";
-    //calcFinalWSE(pondPolys);
-    ReachLines reachStorage(pondPoints);
-    //setOutputPaths(pondPolys);
-    createModflowInputs(pondPolys);
+    if (pondPoints.getSuccess())
+    {
+        qDebug()<<"starting polys";
+        DamPolygons pondPolys(pondPoints, m_nType, m_fdirPath);
+        qDebug()<<"finished polys";
+        //calcFinalWSE(pondPolys);
+        ReachLines reachStorage(pondPoints);
+        //setOutputPaths(pondPolys);
+        createModflowInputs(pondPolys);
+    }
+    else
+    {
+        qDebug()<<"no BRAT features, simulation ended";
+    }
 }
 
 void StorageModel::runFromPoints(const char *damsIn, const char *csvOut, int nRunType)

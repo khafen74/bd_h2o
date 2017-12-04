@@ -31,6 +31,7 @@ public:
     void createFields(OGRLayer *pLayer);
     QString getBratDir();
     QString getBratName();
+    bool getSuccess();
     const char* getDemPath();
     const char* getLayerName();
     const char* getOutDirPath();
@@ -56,6 +57,7 @@ private:
     QString m_qsBratDir, m_qsBratName;
     QVector<double> m_qvCapacityRank, m_qvMaxDams;
     QVector<int> m_qvBratFID;
+    bool m_success = true;
 };
 
 #endif // DAMPOINTS_H
